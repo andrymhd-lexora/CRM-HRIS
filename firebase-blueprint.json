@@ -1,0 +1,224 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profiles within the company tenant.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["Admin", "Manager", "Staff"] },
+        "status": { "type": "string", "enum": ["Active", "Suspended"] },
+        "employeeCode": { "type": "string" },
+        "joinedAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role", "status"]
+    },
+    "Invitation": {
+      "title": "User Invitation",
+      "description": "Internal company invitation codes/emails.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["Admin", "Manager", "Staff"] },
+        "status": { "type": "string", "enum": ["Pending", "Used", "Expired"] },
+        "createdBy": { "type": "string" },
+        "createdByName": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "usedBy": { "type": "string" },
+        "usedAt": { "type": "string" }
+      },
+      "required": ["code", "role", "status", "createdAt"]
+    },
+    "Contact": {
+      "title": "CRM Contact",
+      "description": "Internal single tenant contacts database.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "company": { "type": "string" },
+        "type": { "type": "string" },
+        "status": { "type": "string" },
+        "tags": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "email", "company", "type", "status"]
+    },
+    "Lead": {
+      "title": "CRM Lead",
+      "description": "Internal company sales leads.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "company": { "type": "string" },
+        "source": { "type": "string" },
+        "stage": { "type": "string" },
+        "score": { "type": "number" },
+        "notes": { "type": "string" },
+        "contactId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "company", "source", "stage"]
+    },
+    "Deal": {
+      "title": "CRM Deal",
+      "description": "Internal company sales deals pipeline.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "company": { "type": "string" },
+        "value": { "type": "number" },
+        "stage": { "type": "string" },
+        "probability": { "type": "number" },
+        "expectedClose": { "type": "string" },
+        "contactId": { "type": "string" },
+        "leadId": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "company", "value", "stage"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "CRM & HRIS internal tasks.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "priority": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "relatedType": { "type": "string" },
+        "relatedId": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "status", "priority"]
+    },
+    "Activity": {
+      "title": "Activity Log",
+      "description": "System activity logs.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "entityType": { "type": "string" },
+        "entityId": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["type", "description", "timestamp"]
+    },
+    "Employee": {
+      "title": "HRIS Employee",
+      "description": "Internal employee records.",
+      "type": "object",
+      "properties": {
+        "employeeCode": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "department": { "type": "string" },
+        "position": { "type": "string" },
+        "employmentType": { "type": "string" },
+        "status": { "type": "string" },
+        "joinDate": { "type": "string" },
+        "baseSalary": { "type": "number" },
+        "allowance": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["employeeCode", "name", "email", "department", "position"]
+    },
+    "Attendance": {
+      "title": "HRIS Attendance",
+      "description": "Employee attendance logs.",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "employeeCode": { "type": "string" },
+        "date": { "type": "string" },
+        "checkIn": { "type": "string" },
+        "checkOut": { "type": "string" },
+        "status": { "type": "string" },
+        "hoursWorked": { "type": "number" },
+        "overtimeHours": { "type": "number" },
+        "workLocation": { "type": "string" }
+      },
+      "required": ["employeeId", "date", "status"]
+    },
+    "LeaveRequest": {
+      "title": "HRIS Leave Request",
+      "description": "Leave & permission requests.",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "leaveType": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "totalDays": { "type": "number" },
+        "reason": { "type": "string" },
+        "status": { "type": "string" },
+        "approvedBy": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["employeeId", "leaveType", "startDate", "endDate", "status"]
+    },
+    "Payroll": {
+      "title": "HRIS Payroll",
+      "description": "Monthly employee payroll records.",
+      "type": "object",
+      "properties": {
+        "payrollCode": { "type": "string" },
+        "month": { "type": "number" },
+        "year": { "type": "number" },
+        "periodName": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "department": { "type": "string" },
+        "position": { "type": "string" },
+        "baseSalary": { "type": "number" },
+        "netSalary": { "type": "number" },
+        "paymentStatus": { "type": "string" }
+      },
+      "required": ["payrollCode", "month", "year", "employeeId", "netSalary", "paymentStatus"]
+    },
+    "CompanyProfile": {
+      "title": "Company Profile & Identity",
+      "description": "Tenant enterprise identity, uploaded logo, address, and legal entity profile.",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string" },
+        "legalName": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "address": { "type": "string" },
+        "city": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "website": { "type": "string" },
+        "taxId": { "type": "string" },
+        "signatoryName": { "type": "string" },
+        "signatoryTitle": { "type": "string" },
+        "currency": { "type": "string" }
+      },
+      "required": ["companyName", "legalName", "address", "signatoryName", "signatoryTitle"]
+    }
+  },
+  "firestoreRules": {
+    "userRule": "Allow authenticated users to read and update their own user record or internal collections.",
+    "invitationRule": "Authenticated users can read invitations; Admins can write invitations.",
+    "tenantRule": "Authenticated users can read/write shared tenant data."
+  }
+}

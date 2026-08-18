@@ -1,0 +1,8 @@
+{
+  "name": "SaaS CRM x HRIS ver 3",
+  "description": "Modern Enterprise SaaS CRM and HRIS platform featuring live Attendance Terminal (Camera + Geolocation), complete Payroll Engine with official PPh 21 TER (PP 58/2023 & PMK 168/2023) tables & simulator, printable payslips, Leave Management, and CRM pipelines.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
