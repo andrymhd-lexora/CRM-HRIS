@@ -8,7 +8,10 @@ import { useHRISSync } from './hooks/useHRISSync';
 import {
   getUserProfile,
   findRegisteredUserOrEmployee,
+  findPendingInvitationForEmail,
+  claimInvitationForUser,
   checkHasAnyUsers,
+  isDeveloperOrSystemAdminEmail,
   subscribeUsers,
   subscribeCompanies,
   subscribeContacts,
@@ -214,38 +217,82 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        const userEmail = (firebaseUser.email || '').trim().toLowerCase();
         let profile = await getUserProfile(firebaseUser.uid);
+        
         if (!profile) {
-          const regData = await findRegisteredUserOrEmployee(firebaseUser.email || '');
-          if (regData?.profile) {
-            profile = { ...regData.profile, uid: firebaseUser.uid };
-            await setDoc(doc(db, 'users', firebaseUser.uid), profile);
-          } else if (regData?.employee) {
+          if (isDeveloperOrSystemAdminEmail(userEmail)) {
             profile = {
               uid: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              displayName: regData.employee.name || firebaseUser.displayName || 'Employee',
-              role: regData.employee.department === 'HR & Finance' ? 'Admin' : 'Staff',
+              email: userEmail,
+              displayName: firebaseUser.displayName || 'Andry Mahardika',
+              role: 'Super Admin',
               status: 'Active',
               joinedAt: new Date().toISOString(),
-              invitedBy: 'Admin (Pre-registered Employee)'
+              invitedBy: 'System Owner / Super Admin'
             };
             await setDoc(doc(db, 'users', firebaseUser.uid), profile);
           } else {
-            const hasUsers = await checkHasAnyUsers();
-            const userRole: any = hasUsers ? 'Admin' : 'Super Admin';
-            profile = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              displayName: firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Administrator'),
-              role: userRole,
-              status: 'Active',
-              joinedAt: new Date().toISOString(),
-              invitedBy: 'System Auto-Provisioning'
-            };
-            await setDoc(doc(db, 'users', firebaseUser.uid), profile);
+            const regData = await findRegisteredUserOrEmployee(userEmail);
+            if (regData?.profile) {
+              profile = { ...regData.profile, uid: firebaseUser.uid };
+              await setDoc(doc(db, 'users', firebaseUser.uid), profile);
+            } else if (regData?.employee) {
+              profile = {
+                uid: firebaseUser.uid,
+                email: userEmail,
+                displayName: regData.employee.name || firebaseUser.displayName || userEmail.split('@')[0],
+                role: regData.employee.department === 'HR & Finance' ? 'Admin' : 'Staff',
+                status: 'Active',
+                joinedAt: new Date().toISOString(),
+                invitedBy: 'Admin (Pre-registered Employee)'
+              };
+              await setDoc(doc(db, 'users', firebaseUser.uid), profile);
+            } else {
+              // Check if there is an active pending invitation for this email
+              const pendingInv = await findPendingInvitationForEmail(userEmail);
+              if (pendingInv) {
+                profile = await claimInvitationForUser(
+                  firebaseUser.uid,
+                  userEmail,
+                  firebaseUser.displayName || userEmail.split('@')[0],
+                  pendingInv
+                );
+              } else {
+                const hasUsers = await checkHasAnyUsers();
+                if (!hasUsers) {
+                  // System bootstrap: First user ever becomes Super Admin
+                  profile = {
+                    uid: firebaseUser.uid,
+                    email: userEmail,
+                    displayName: firebaseUser.displayName || (userEmail ? userEmail.split('@')[0] : 'Administrator'),
+                    role: 'Super Admin',
+                    status: 'Active',
+                    joinedAt: new Date().toISOString(),
+                    invitedBy: 'System Bootstrap'
+                  };
+                  await setDoc(doc(db, 'users', firebaseUser.uid), profile);
+                } else {
+                  // STRICT SECURITY GATE: User is NOT registered and has NO invitation!
+                  await signOut(auth);
+                  setCurrentUser(null);
+                  setActiveView('landing');
+                  addToast(`Akses Ditolak: Akun (${userEmail || 'User'}) belum terdaftar dari undangan. Silakan hubungi Admin perusahaan.`, 'error');
+                  return;
+                }
+              }
+            }
           }
         }
+
+        if (profile?.status === 'Suspended') {
+          await signOut(auth);
+          setCurrentUser(null);
+          setActiveView('landing');
+          addToast('Akun Anda dinonaktifkan oleh Administrator.', 'error');
+          return;
+        }
+
         setCurrentUser(profile);
       } else {
         setCurrentUser(null);
