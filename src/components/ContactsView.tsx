@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Contact, ContactType, ContactStatus } from '../types/crm';
+import { Contact, ContactType, ContactStatus, Company } from '../types/crm';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Users,
   Search,
@@ -16,8 +17,6 @@ import {
   X
 } from 'lucide-react';
 
-import { Company } from '../types/crm';
-
 interface ContactsViewProps {
   contacts: Contact[];
   companies?: Company[];
@@ -33,6 +32,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
   onUpdateContact,
   onDeleteContact
 }) => {
+  const { language, t } = useLanguage();
   const [search, setSearch] = useState('');
   const [selectedType, setSelectedType] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
@@ -113,25 +113,29 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
     setIsModalOpen(false);
   };
 
-  const getCleanPhone = (phone: string) => {
-    return phone.replace(/[^0-9]/g, '');
+  const getCleanPhone = (phoneStr: string) => {
+    let clean = phoneStr.replace(/\D/g, '');
+    if (clean.startsWith('0')) {
+      clean = '62' + clean.slice(1);
+    }
+    return clean;
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header & Controls */}
+    <div className="space-y-6">
+      {/* Top Header Card */}
       <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              <span>Database Kontak</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold border border-blue-100">
-                {filteredContacts.length} Kontak
+            <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <Users className="w-6 h-6 text-blue-600" />
+              <span>{t.contacts.title}</span>
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                {filteredContacts.length} {language === 'id' ? 'Kontak' : 'Contacts'}
               </span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Kelola data pelanggan, prospect, partner, dan vendor perusahaan.
+              {t.contacts.subtitle}
             </p>
           </div>
 
@@ -140,19 +144,19 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
               <button
                 onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-lg text-xs font-bold transition-all ${
+                className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewMode === 'table' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-900'
                 }`}
-                title="Tampilan Tabel"
+                title={language === 'id' ? 'Tampilan Tabel' : 'Table View'}
               >
                 <List className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg text-xs font-bold transition-all ${
+                className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewMode === 'grid' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-900'
                 }`}
-                title="Tampilan Grid Card"
+                title={language === 'id' ? 'Tampilan Grid Card' : 'Grid View'}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
@@ -160,10 +164,10 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
 
             <button
               onClick={handleOpenAddModal}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Tambah Kontak</span>
+              <span>{t.contacts.addContact}</span>
             </button>
           </div>
         </div>
@@ -176,7 +180,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nama, perusahaan, email, phone..."
+              placeholder={t.contacts.searchPlaceholder}
               className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800"
             />
           </div>
@@ -188,9 +192,9 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
               onChange={(e) => setSelectedType(e.target.value)}
               className="px-3 py-1.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
-              {typesList.map((t) => (
-                <option key={t} value={t}>
-                  Type: {t}
+              {typesList.map((tItem) => (
+                <option key={tItem} value={tItem}>
+                  Type: {tItem === 'All' ? (language === 'id' ? 'Semua' : 'All') : tItem}
                 </option>
               ))}
             </select>
@@ -201,7 +205,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="px-3 py-1.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
-              <option value="All">Status: All</option>
+              <option value="All">Status: {language === 'id' ? 'Semua' : 'All'}</option>
               <option value="Active">Status: Active</option>
               <option value="Inactive">Status: Inactive</option>
             </select>
@@ -213,9 +217,13 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
       {filteredContacts.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center space-y-3">
           <Users className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="font-extrabold text-slate-800 text-sm">Tidak ada kontak ditemukan</h3>
+          <h3 className="font-extrabold text-slate-800 text-sm">
+            {language === 'id' ? 'Tidak ada kontak ditemukan' : 'No contacts found'}
+          </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Coba ubah kata kunci pencarian atau gunakan tombol "Tambah Kontak" untuk membuat kontak baru.
+            {language === 'id'
+              ? 'Coba ubah kata kunci pencarian atau gunakan tombol "Tambah Kontak" untuk membuat kontak baru.'
+              : 'Try modifying your search or click "Add Contact" to create a new contact.'}
           </p>
         </div>
       ) : viewMode === 'table' ? (
@@ -224,12 +232,12 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
             <table className="w-full text-xs text-left">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-400 font-extrabold uppercase tracking-wider">
-                  <th className="py-3 px-4">Nama Kontak</th>
-                  <th className="py-3 px-4">Perusahaan</th>
-                  <th className="py-3 px-4">Kontak Info</th>
-                  <th className="py-3 px-4">Kategori Type</th>
+                  <th className="py-3 px-4">{language === 'id' ? 'Nama Kontak' : 'Contact Name'}</th>
+                  <th className="py-3 px-4">{language === 'id' ? 'Perusahaan' : 'Company'}</th>
+                  <th className="py-3 px-4">{language === 'id' ? 'Kontak Info' : 'Contact Info'}</th>
+                  <th className="py-3 px-4">{language === 'id' ? 'Kategori Type' : 'Type'}</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Tindakan</th>
+                  <th className="py-3 px-4 text-right">{t.actions.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -306,7 +314,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                           <a
                             href={`mailto:${c.email}`}
                             className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                            title="Kirim Email"
+                            title="Email"
                           >
                             <Mail className="w-4 h-4" />
                           </a>
@@ -315,8 +323,8 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                         {/* Edit Button */}
                         <button
                           onClick={() => handleOpenEditModal(c)}
-                          className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                          title="Edit Kontak"
+                          className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+                          title={t.actions.edit}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -324,8 +332,8 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                         {/* Delete Button */}
                         <button
                           onClick={() => c.id && onDeleteContact(c.id)}
-                          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                          title="Hapus Kontak"
+                          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                          title={t.actions.delete}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -351,7 +359,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                     <h3 className="font-extrabold text-slate-900 text-sm">{c.name}</h3>
                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                       <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                      {c.company || 'Perusahaan tidak diisi'}
+                      {c.company || (language === 'id' ? 'Perusahaan tidak diisi' : 'Company not set')}
                     </p>
                   </div>
                   <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[10px] shrink-0 border border-blue-100">
@@ -415,13 +423,15 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleOpenEditModal(c)}
-                    className="p-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                    className="p-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+                    title={t.actions.edit}
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => c.id && onDeleteContact(c.id)}
-                    className="p-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    className="p-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                    title={t.actions.delete}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -444,13 +454,13 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
             <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0">
               <h3 className="font-extrabold text-sm sm:text-base flex items-center gap-2">
                 <Users className="w-4 h-4 text-blue-400" />
-                {editingContact ? 'Edit Data Kontak' : 'Tambah Kontak Baru'}
+                <span>{editingContact ? (language === 'id' ? 'Edit Data Kontak' : 'Edit Contact') : t.contacts.addContact}</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                title="Tutup Menu"
+                className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                title={t.actions.close}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -460,7 +470,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
               <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs font-medium flex-1">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Nama Lengkap *
+                    {language === 'id' ? 'Nama Lengkap *' : 'Full Name *'}
                   </label>
                   <input
                     type="text"
@@ -485,7 +495,9 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Telepon / WhatsApp</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      {language === 'id' ? 'Telepon / WhatsApp' : 'Phone / WhatsApp'}
+                    </label>
                     <input
                       type="text"
                       value={formData.phone}
@@ -497,7 +509,9 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Pilih Perusahaan Terdaftar (Master Data)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'id' ? 'Pilih Perusahaan Terdaftar (Master Data)' : 'Link to Company (Master Data)'}
+                  </label>
                   <select
                     value={formData.companyId ? String(formData.companyId) : ''}
                     onChange={(e) => {
@@ -517,7 +531,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                     }}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 mb-2"
                   >
-                    <option value="">-- Pilih dari Master Perusahaan (Atau Ketik Manual) --</option>
+                    <option value="">{language === 'id' ? '-- Pilih dari Master Perusahaan (Atau Ketik Manual) --' : '-- Select from Companies (or type below) --'}</option>
                     {companies.map((comp) => (
                       <option key={comp.id} value={String(comp.id)}>
                         {comp.name} {comp.industry ? `(${comp.industry})` : ''}
@@ -525,7 +539,9 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                     ))}
                   </select>
 
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Nama Perusahaan (Ketik Manual / Hasil Pilih)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'id' ? 'Nama Perusahaan (Ketik Manual / Hasil Pilih)' : 'Company Name'}
+                  </label>
                   <input
                     type="text"
                     value={formData.company}
@@ -549,7 +565,9 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Kategori Type</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      {language === 'id' ? 'Kategori Type' : 'Type Category'}
+                    </label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value as ContactType })}
@@ -565,7 +583,9 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Status Kontak</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      {language === 'id' ? 'Status Kontak' : 'Contact Status'}
+                    </label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as ContactStatus })}
@@ -578,7 +598,9 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Tags (Pisahkan koma)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'id' ? 'Tags (Pisahkan koma)' : 'Tags (comma-separated)'}
+                  </label>
                   <input
                     type="text"
                     value={formData.tags}
@@ -589,31 +611,50 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Catatan Tambahan</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'id' ? 'Catatan Tambahan' : 'Notes'}
+                  </label>
                   <textarea
                     rows={2}
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Catatan latar belakang kontak..."
+                    placeholder={language === 'id' ? 'Catatan latar belakang kontak...' : 'Additional background notes...'}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   />
                 </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-colors"
-                >
-                  {editingContact ? 'Simpan Perubahan' : 'Tambah Kontak'}
-                </button>
+              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between gap-2 shrink-0">
+                {editingContact && editingContact.id ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = String(editingContact.id);
+                      setIsModalOpen(false);
+                      onDeleteContact(id);
+                    }}
+                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{language === 'id' ? 'Hapus Kontak' : 'Delete Contact'}</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    {t.actions.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
+                  >
+                    {editingContact ? t.actions.save : t.actions.save}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

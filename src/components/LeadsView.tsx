@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lead, Contact, Company, LeadSource, UserProfile } from '../types/crm';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Target,
   Search,
@@ -51,6 +52,7 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
   onDeleteLead,
   onConvertLeadToDeal
 }) => {
+  const { language, t, formatCurrency: formatMoney } = useLanguage();
   const [search, setSearch] = useState('');
   const [selectedSource, setSelectedSource] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
@@ -110,25 +112,25 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (l: Lead) => {
-    setEditingLead(l);
-    setName(l.name);
-    setEmail(l.email || '');
-    setPhone(l.phone || '');
-    setCompany(l.company || '');
-    setSelectedCompanyId(l.companyId ? String(l.companyId) : '');
-    setSelectedContactId(l.contactId ? String(l.contactId) : '');
-    setSource(l.source || 'Website');
-    setStage(l.stage || 'NEW');
-    setProductService(l.productService || '');
-    setEstimatedValue(l.estimatedValue || 0);
-    setNotes(l.notes || '');
+  const handleOpenEditModal = (lead: Lead) => {
+    setEditingLead(lead);
+    setName(lead.name);
+    setEmail(lead.email || '');
+    setPhone(lead.phone || '');
+    setCompany(lead.company);
+    setSelectedCompanyId(lead.companyId ? String(lead.companyId) : '');
+    setSelectedContactId(lead.contactId ? String(lead.contactId) : '');
+    setSource(lead.source || 'Website');
+    setStage(lead.stage || 'NEW');
+    setProductService(lead.productService || '');
+    setEstimatedValue(lead.estimatedValue || 0);
+    setNotes(lead.notes || '');
     setIsModalOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !company.trim()) return;
 
     if (editingLead && editingLead.id) {
       onUpdateLead(String(editingLead.id), {
@@ -177,15 +179,15 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <Target className="w-7 h-7 text-blue-600" /> Leads Pipeline & Prospecting
+            <Target className="w-7 h-7 text-blue-600" />
+            <span>{t.leads.title}</span>
           </h1>
           <p className="text-slate-500 text-xs mt-1">
-            Kelola prospek calon pembeli dari pertama kali masuk hingga dikonversi menjadi Deal
+            {t.leads.subtitle}
           </p>
         </div>
 
@@ -194,27 +196,28 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
           <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs">
             <button
               onClick={() => setViewMode('kanban')}
-              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-colors cursor-pointer ${
                 viewMode === 'kanban' ? 'bg-white shadow-xs text-blue-600' : 'text-slate-600'
               }`}
             >
-              <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+              <LayoutGrid className="w-3.5 h-3.5" /> {t.leads.kanbanView}
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-colors cursor-pointer ${
                 viewMode === 'table' ? 'bg-white shadow-xs text-blue-600' : 'text-slate-600'
               }`}
             >
-              <List className="w-3.5 h-3.5" /> Tabel
+              <List className="w-3.5 h-3.5" /> {t.leads.tableView}
             </button>
           </div>
 
           <button
             onClick={() => handleOpenAddModal('NEW')}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-md transition-all"
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Tambah Lead Baru
+            <Plus className="w-4 h-4" />
+            <span>{t.leads.addLead}</span>
           </button>
         </div>
       </div>
@@ -225,7 +228,7 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Cari lead, nama PIC, perusahaan..."
+            placeholder={t.leads.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500/20"
@@ -238,11 +241,11 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
             <button
               key={sc}
               onClick={() => setSelectedSource(sc)}
-              className={`px-3 py-1.5 rounded-xl font-bold transition-colors shrink-0 ${
+              className={`px-3 py-1.5 rounded-xl font-bold transition-colors shrink-0 cursor-pointer ${
                 selectedSource === sc ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {sc}
+              {sc === 'All' ? (language === 'id' ? 'Semua' : 'All') : sc}
             </button>
           ))}
         </div>
@@ -266,7 +269,7 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                     </span>
                   </div>
                   <span className="text-[11px] font-bold text-slate-500">
-                    Rp {Math.round(totalStageValue / 1000000)}M
+                    {formatMoney(totalStageValue)}
                   </span>
                 </div>
 
@@ -297,19 +300,31 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleOpenEditModal(lead)}
-                            className="p-1 text-slate-400 hover:text-blue-600 rounded-md"
+                            className="p-1 text-slate-400 hover:text-blue-600 rounded-md cursor-pointer"
+                            title={t.actions.edit}
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
+                          {lead.id && (
+                            <button
+                              onClick={() => onDeleteLead(String(lead.id))}
+                              className="p-1 text-slate-400 hover:text-rose-600 rounded-md cursor-pointer"
+                              title={t.actions.delete}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
 
                       <div className="text-[11px] text-slate-600 space-y-1">
                         {lead.productService && (
-                          <p className="font-medium text-slate-700">Produk: {lead.productService}</p>
+                          <p className="font-medium text-slate-700">
+                            {language === 'id' ? 'Produk: ' : 'Product: '}{lead.productService}
+                          </p>
                         )}
                         <p className="font-black text-blue-700">
-                          Est. Rp {(lead.estimatedValue || 0).toLocaleString('id-ID')}
+                          Est. {formatMoney(lead.estimatedValue || 0)}
                         </p>
                       </div>
 
@@ -319,14 +334,14 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                         
                         {lead.stage === 'CONVERTED' ? (
                           <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px] flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" /> Converted
+                            <CheckCircle2 className="w-3 h-3" /> {t.leads.converted}
                           </span>
                         ) : onConvertLeadToDeal ? (
                           <button
                             onClick={() => onConvertLeadToDeal(lead)}
-                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] flex items-center gap-1 shadow-xs transition-colors"
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
                           >
-                            <ArrowRightLeft className="w-3 h-3" /> Convert Deal
+                            <ArrowRightLeft className="w-3 h-3" /> {t.leads.convertDeal}
                           </button>
                         ) : null}
                       </div>
@@ -346,11 +361,11 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
-                  <th className="py-3.5 px-4">Nama Lead & Perusahaan</th>
-                  <th className="py-3.5 px-4">Kontak</th>
-                  <th className="py-3.5 px-4">Produk / Estimasi</th>
+                  <th className="py-3.5 px-4">{language === 'id' ? 'Nama Lead & Perusahaan' : 'Lead & Company'}</th>
+                  <th className="py-3.5 px-4">{language === 'id' ? 'Kontak' : 'Contact'}</th>
+                  <th className="py-3.5 px-4">{language === 'id' ? 'Produk / Estimasi' : 'Product / Est. Value'}</th>
                   <th className="py-3.5 px-4">Stage</th>
-                  <th className="py-3.5 px-4 text-right">Aksi</th>
+                  <th className="py-3.5 px-4 text-right">{t.actions.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -365,7 +380,7 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                       <p className="text-[11px] text-slate-400">{l.email || '-'}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="font-bold text-slate-900">Rp {(l.estimatedValue || 0).toLocaleString('id-ID')}</p>
+                      <p className="font-bold text-slate-900">{formatMoney(l.estimatedValue || 0)}</p>
                       <p className="text-[11px] text-slate-500">{l.productService || '-'}</p>
                     </td>
                     <td className="py-4 px-4">
@@ -376,18 +391,27 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                       </span>
                     </td>
                     <td className="py-4 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
                         {l.stage !== 'CONVERTED' && onConvertLeadToDeal && (
                           <button
                             onClick={() => onConvertLeadToDeal(l)}
-                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px]"
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] cursor-pointer"
                           >
-                            Convert
+                            {t.leads.convertDeal}
                           </button>
                         )}
-                        <button onClick={() => handleOpenEditModal(l)} className="p-1 text-slate-400 hover:text-blue-600">
+                        <button onClick={() => handleOpenEditModal(l)} className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" title={t.actions.edit}>
                           <Edit className="w-4 h-4" />
                         </button>
+                        {l.id && (
+                          <button
+                            onClick={() => onDeleteLead(String(l.id))}
+                            className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                            title={t.actions.delete}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -410,13 +434,13 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
             <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0">
               <h2 className="text-sm sm:text-base font-extrabold flex items-center gap-2">
                 <Target className="w-4 h-4 text-blue-400" />
-                {editingLead ? 'Edit Data Lead' : 'Tambah Lead Prospek Baru'}
+                <span>{editingLead ? (language === 'id' ? 'Edit Data Lead' : 'Edit Lead') : t.leads.addLead}</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                title="Tutup Menu"
+                className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                title={t.actions.close}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -426,13 +450,15 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
               <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs font-medium flex-1">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Pilih Kontak Terdaftar (Master Kontak)</label>
+                    <label className="block text-slate-700 font-bold mb-1">
+                      {language === 'id' ? 'Pilih Kontak (Master)' : 'Link to Contact'}
+                    </label>
                     <select
                       value={selectedContactId}
                       onChange={handleContactSelect}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
-                      <option value="">-- Pilih dari Master Kontak --</option>
+                      <option value="">{language === 'id' ? '-- Pilih dari Master Kontak --' : '-- Select from Contacts --'}</option>
                       {contacts.map((ct) => (
                         <option key={ct.id} value={String(ct.id)}>
                           {ct.name} {ct.company ? `(${ct.company})` : ''}
@@ -442,13 +468,15 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Pilih Perusahaan Terdaftar (Master Perusahaan)</label>
+                    <label className="block text-slate-700 font-bold mb-1">
+                      {language === 'id' ? 'Pilih Perusahaan (Master)' : 'Link to Company'}
+                    </label>
                     <select
                       value={selectedCompanyId}
                       onChange={handleCompanySelect}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
-                      <option value="">-- Pilih dari Master Perusahaan --</option>
+                      <option value="">{language === 'id' ? '-- Pilih dari Master Perusahaan --' : '-- Select from Companies --'}</option>
                       {companies.map((c) => (
                         <option key={c.id} value={String(c.id)}>{c.name}</option>
                       ))}
@@ -456,7 +484,9 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Nama Lead / PIC *</label>
+                    <label className="block text-slate-700 font-bold mb-1">
+                      {language === 'id' ? 'Nama Lead / PIC *' : 'Lead PIC Name *'}
+                    </label>
                     <input
                       type="text"
                       required
@@ -468,7 +498,9 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Nama Perusahaan *</label>
+                    <label className="block text-slate-700 font-bold mb-1">
+                      {language === 'id' ? 'Nama Perusahaan *' : 'Company Name *'}
+                    </label>
                     <input
                       type="text"
                       required
@@ -482,7 +514,9 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">No Telepon / WA</label>
+                    <label className="block text-slate-700 font-bold mb-1">
+                      {language === 'id' ? 'No Telepon / WA' : 'Phone / WhatsApp'}
+                    </label>
                     <input
                       type="text"
                       placeholder="0812xxxx"
@@ -519,7 +553,9 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Estimasi Nilai (Rp)</label>
+                    <label className="block text-slate-700 font-bold mb-1">
+                      {language === 'id' ? 'Estimasi Nilai' : 'Estimated Value'}
+                    </label>
                     <input
                       type="number"
                       value={estimatedValue}
@@ -530,7 +566,9 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1">Produk / Layanan Yang Diminati</label>
+                  <label className="block text-slate-700 font-bold mb-1">
+                    {language === 'id' ? 'Produk / Layanan Yang Diminati' : 'Interested Product / Service'}
+                  </label>
                   <input
                     type="text"
                     placeholder="Contoh: Software HRIS & Payroll System"
@@ -541,27 +579,42 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                 </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-colors"
-                >
-                  {editingLead ? 'Simpan Perubahan' : 'Simpan Lead'}
-                </button>
-              </div>
+              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between gap-2 shrink-0">
+                {editingLead && editingLead.id ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = String(editingLead.id);
+                      setIsModalOpen(false);
+                      onDeleteLead(id);
+                    }}
+                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{language === 'id' ? 'Hapus Lead' : 'Delete Lead'}</span>
+                  </button>
+                ) : <div />}
 
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    {t.actions.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
+                  >
+                    {editingLead ? t.actions.save : t.actions.save}
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 };

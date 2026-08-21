@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Task, TaskStatus, TaskPriority } from '../types/crm';
 import { isTaskDueSoon, isTaskOverdue } from '../utils/taskUtils';
 import { TaskCalendarView } from './TaskCalendarView';
+import { useLanguage } from '../context/LanguageContext';
 import {
   CheckSquare,
   Search,
@@ -33,6 +34,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
   onDeleteTask,
   onToggleTaskStatus
 }) => {
+  const { language, t } = useLanguage();
   const [viewMode, setViewMode] = useState<'board' | 'calendar'>('board');
   const [search, setSearch] = useState('');
   const [groupBy, setGroupBy] = useState<'status' | 'priority'>('status');
@@ -49,23 +51,23 @@ export const TasksView: React.FC<TasksViewProps> = ({
     notes: ''
   });
 
-  const filteredTasks = tasks.filter((t) => {
+  const filteredTasks = tasks.filter((tItem) => {
     return (
-      t.title.toLowerCase().includes(search.toLowerCase()) ||
-      (t.assignedTo && t.assignedTo.toLowerCase().includes(search.toLowerCase()))
+      tItem.title.toLowerCase().includes(search.toLowerCase()) ||
+      (tItem.assignedTo && tItem.assignedTo.toLowerCase().includes(search.toLowerCase()))
     );
   });
 
   const statusGroups: { id: TaskStatus; label: string; color: string }[] = [
-    { id: 'Todo', label: 'Belum Dikerjakan (Todo)', color: '#3B82F6' },
-    { id: 'In Progress', label: 'Dalam Proses (In Progress)', color: '#F59E0B' },
-    { id: 'Completed', label: 'Selesai (Completed)', color: '#16A34A' }
+    { id: 'Todo', label: language === 'id' ? 'Belum Dikerjakan (Todo)' : 'To Do', color: '#3B82F6' },
+    { id: 'In Progress', label: language === 'id' ? 'Dalam Proses (In Progress)' : 'In Progress', color: '#F59E0B' },
+    { id: 'Completed', label: language === 'id' ? 'Selesai (Completed)' : 'Completed', color: '#16A34A' }
   ];
 
   const priorityGroups: { id: TaskPriority; label: string; color: string }[] = [
-    { id: 'High', label: 'Prioritas Tinggi (High)', color: '#DC2626' },
-    { id: 'Medium', label: 'Prioritas Sedang (Medium)', color: '#D97706' },
-    { id: 'Low', label: 'Prioritas Rendah (Low)', color: '#2563EB' }
+    { id: 'High', label: language === 'id' ? 'Prioritas Tinggi (High)' : 'High Priority', color: '#DC2626' },
+    { id: 'Medium', label: language === 'id' ? 'Prioritas Sedang (Medium)' : 'Medium Priority', color: '#D97706' },
+    { id: 'Low', label: language === 'id' ? 'Prioritas Rendah (Low)' : 'Low Priority', color: '#2563EB' }
   ];
 
   const handleOpenAddModal = (initialStatus?: TaskStatus, initialDueDate?: string) => {
@@ -115,13 +117,13 @@ export const TasksView: React.FC<TasksViewProps> = ({
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
               <CheckSquare className="w-5 h-5 text-amber-500" />
-              <span>Task & Activity Planner</span>
+              <span>{t.tasks.title}</span>
               <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 text-xs font-bold border border-amber-100">
-                {tasks.length} Tasks Total
+                {tasks.length} {language === 'id' ? 'Total Tugas' : 'Total Tasks'}
               </span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Visualisasikan deadline, tugas, dan agenda tim sales dalam Kanban Board atau Kalender Bulanan interaktif.
+              {t.tasks.subtitle}
             </p>
           </div>
 
@@ -130,25 +132,25 @@ export const TasksView: React.FC<TasksViewProps> = ({
             <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80 text-xs font-bold">
               <button
                 onClick={() => setViewMode('board')}
-                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                   viewMode === 'board'
                     ? 'bg-white text-amber-600 shadow-xs'
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Kanban Board</span>
+                <span>{t.tasks.kanbanBoard}</span>
               </button>
               <button
                 onClick={() => setViewMode('calendar')}
-                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                   viewMode === 'calendar'
                     ? 'bg-white text-amber-600 shadow-xs'
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
                 <CalendarDays className="w-3.5 h-3.5" />
-                <span>Calendar View</span>
+                <span>{t.tasks.calendarView}</span>
               </button>
             </div>
 
@@ -157,29 +159,29 @@ export const TasksView: React.FC<TasksViewProps> = ({
               <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-xs font-bold">
                 <button
                   onClick={() => setGroupBy('status')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     groupBy === 'status' ? 'bg-white text-amber-600 shadow-xs' : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  By Status
+                  {language === 'id' ? 'Status' : 'By Status'}
                 </button>
                 <button
                   onClick={() => setGroupBy('priority')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     groupBy === 'priority' ? 'bg-white text-amber-600 shadow-xs' : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  By Priority
+                  {language === 'id' ? 'Prioritas' : 'By Priority'}
                 </button>
               </div>
             )}
 
             <button
               onClick={() => handleOpenAddModal()}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20 flex items-center gap-1.5"
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Tambah Task</span>
+              <span>{t.tasks.addTask}</span>
             </button>
           </div>
         </div>
@@ -193,12 +195,12 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari task, penanggung jawab..."
+                placeholder={t.tasks.searchPlaceholder}
                 className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-800"
               />
             </div>
             <span className="text-xs font-semibold text-slate-500 hidden sm:inline">
-              Menampilkan {filteredTasks.length} task
+              {language === 'id' ? `Menampilkan ${filteredTasks.length} task` : `Showing ${filteredTasks.length} tasks`}
             </span>
           </div>
         )}
@@ -219,8 +221,8 @@ export const TasksView: React.FC<TasksViewProps> = ({
         /* Task Grouped Columns View (Kanban) */
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {(groupBy === 'status' ? statusGroups : priorityGroups).map((group) => {
-            const groupTasks = filteredTasks.filter((t) =>
-              groupBy === 'status' ? t.status === group.id : t.priority === group.id
+            const groupTasks = filteredTasks.filter((tItem) =>
+              groupBy === 'status' ? tItem.status === group.id : tItem.priority === group.id
             );
 
             return (
@@ -247,17 +249,17 @@ export const TasksView: React.FC<TasksViewProps> = ({
                   <div className="space-y-3">
                     {groupTasks.length === 0 ? (
                       <div className="p-6 text-center text-xs text-slate-400">
-                        Tidak ada task pada kategori ini
+                        {language === 'id' ? 'Tidak ada task pada kategori ini' : 'No tasks in this category'}
                       </div>
                     ) : (
-                      groupTasks.map((t) => {
-                        const isCompleted = t.status === 'Completed' || t.status === 'Done';
-                        const isDueSoon = isTaskDueSoon(t);
-                        const isOver = isTaskOverdue(t);
+                      groupTasks.map((tItem) => {
+                        const isCompleted = tItem.status === 'Completed' || tItem.status === 'Done';
+                        const isDueSoon = isTaskDueSoon(tItem);
+                        const isOver = isTaskOverdue(tItem);
 
                         return (
                           <div
-                            key={t.id}
+                            key={tItem.id}
                             className={`p-4 rounded-2xl border transition-all space-y-2.5 ${
                               isCompleted
                                 ? 'bg-slate-50/60 border-slate-200/60 opacity-80'
@@ -272,7 +274,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
                               <input
                                 type="checkbox"
                                 checked={isCompleted}
-                                onChange={() => t.id && onToggleTaskStatus(t.id)}
+                                onChange={() => tItem.id && onToggleTaskStatus(tItem.id)}
                                 className="mt-0.5 rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer shrink-0"
                               />
                               <div className="min-w-0 flex-1">
@@ -282,7 +284,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
                                       isCompleted ? 'line-through text-slate-400' : ''
                                     }`}
                                   >
-                                    {t.title}
+                                    {tItem.title}
                                   </p>
                                   {isDueSoon && !isCompleted && (
                                     <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[9px] font-black border border-amber-200 flex items-center gap-0.5">
@@ -292,9 +294,9 @@ export const TasksView: React.FC<TasksViewProps> = ({
                                   )}
                                 </div>
 
-                                {t.notes && (
+                                {tItem.notes && (
                                   <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                                    {t.notes}
+                                    {tItem.notes}
                                   </p>
                                 )}
                               </div>
@@ -302,7 +304,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
 
                             <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[10px] text-slate-400">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                {t.dueDate && (
+                                {tItem.dueDate && (
                                   <span
                                     className={`flex items-center gap-1 px-2 py-0.5 rounded-md font-bold ${
                                       isCompleted
@@ -321,30 +323,32 @@ export const TasksView: React.FC<TasksViewProps> = ({
                                     ) : (
                                       <Calendar className="w-3 h-3" />
                                     )}
-                                    {t.dueDate}
+                                    {tItem.dueDate}
                                     {isDueSoon && !isCompleted && ' (Due Soon)'}
                                     {isOver && !isCompleted && ' (Overdue)'}
                                   </span>
                                 )}
 
-                                {t.assignedTo && (
+                                {tItem.assignedTo && (
                                   <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold">
                                     <User className="w-3 h-3" />
-                                    {t.assignedTo}
+                                    {tItem.assignedTo}
                                   </span>
                                 )}
                               </div>
 
                               <div className="flex items-center gap-1 ml-auto">
                                 <button
-                                  onClick={() => handleOpenEditModal(t)}
-                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                                  onClick={() => handleOpenEditModal(tItem)}
+                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                                  title={t.actions.edit}
                                 >
                                   <Edit className="w-3.5 h-3.5" />
                                 </button>
                                 <button
-                                  onClick={() => t.id && onDeleteTask(t.id)}
-                                  className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                  onClick={() => tItem.id && onDeleteTask(tItem.id)}
+                                  className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                  title={t.actions.delete}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -360,10 +364,10 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 {groupBy === 'status' && (
                   <button
                     onClick={() => handleOpenAddModal(group.id as TaskStatus)}
-                    className="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-slate-700 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1"
+                    className="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-slate-700 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Tambah Task di sini</span>
+                    <span>{language === 'id' ? 'Tambah Task di sini' : 'Add Task here'}</span>
                   </button>
                 )}
               </div>
@@ -378,11 +382,12 @@ export const TasksView: React.FC<TasksViewProps> = ({
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-extrabold text-slate-900 text-base">
-                {editingTask ? 'Edit Task' : 'Tambah Task Baru'}
+                {editingTask ? (language === 'id' ? 'Edit Task' : 'Edit Task') : t.tasks.addTask}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
+                title={t.actions.close}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -390,7 +395,9 @@ export const TasksView: React.FC<TasksViewProps> = ({
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Judul Task *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  {language === 'id' ? 'Judul Task *' : 'Task Title *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -416,7 +423,9 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Prioritas</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'id' ? 'Prioritas' : 'Priority'}
+                  </label>
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
@@ -431,7 +440,9 @@ export const TasksView: React.FC<TasksViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Due Date (Tenggat Waktu)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'id' ? 'Due Date (Tenggat Waktu)' : 'Due Date'}
+                  </label>
                   <input
                     type="date"
                     value={formData.dueDate}
@@ -441,7 +452,9 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Penanggung Jawab (Assigned To)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'id' ? 'Penanggung Jawab (Assigned To)' : 'Assigned To'}
+                  </label>
                   <input
                     type="text"
                     value={formData.assignedTo}
@@ -453,12 +466,14 @@ export const TasksView: React.FC<TasksViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Catatan Task</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  {language === 'id' ? 'Catatan Task' : 'Task Notes'}
+                </label>
                 <textarea
                   rows={2}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Instruksi tambahan..."
+                  placeholder={language === 'id' ? 'Instruksi tambahan...' : 'Additional notes...'}
                   className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20"
                 />
               </div>
@@ -467,15 +482,15 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200"
+                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 cursor-pointer"
                 >
-                  Batal
+                  {t.actions.cancel}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-500/20"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-500/20 cursor-pointer"
                 >
-                  {editingTask ? 'Simpan Perubahan' : 'Tambah Task'}
+                  {editingTask ? t.actions.save : t.actions.save}
                 </button>
               </div>
             </form>
@@ -485,4 +500,3 @@ export const TasksView: React.FC<TasksViewProps> = ({
     </div>
   );
 };
-

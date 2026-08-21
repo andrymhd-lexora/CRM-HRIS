@@ -105,10 +105,13 @@ interface HRISViewProps {
   onDeleteEmployee: (id: any) => Promise<void>;
   onAddAttendance: (data: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   onUpdateAttendance: (id: any, data: Partial<Attendance>) => Promise<void>;
+  onDeleteAttendance?: (id: any) => Promise<void>;
   onAddLeaveRequest: (data: Omit<LeaveRequest, 'id' | 'createdAt'>) => Promise<void>;
   onUpdateLeaveStatus: (id: any, status: LeaveStatus, approvedBy?: string) => Promise<void>;
+  onDeleteLeaveRequest?: (id: any) => Promise<void>;
   onGenerateMonthlyPayroll: (month: number, year: number) => Promise<void>;
   onUpdatePayrollStatus: (id: any, status: PayrollStatus) => Promise<void>;
+  onDeletePayroll?: (id: any) => Promise<void>;
 }
 
 const getTodayDateString = () => {
@@ -133,14 +136,17 @@ export const HRISView: React.FC<HRISViewProps> = ({
   onDeleteEmployee,
   onAddAttendance,
   onUpdateAttendance,
+  onDeleteAttendance,
   onAddLeaveRequest,
   onUpdateLeaveStatus,
+  onDeleteLeaveRequest,
   onGenerateMonthlyPayroll,
-  onUpdatePayrollStatus
+  onUpdatePayrollStatus,
+  onDeletePayroll
 }) => {
   const [activeTab, setActiveTab] = useState<HRISTab>(initialTab);
 
-  const isAdminOrAbove = currentUser?.role === 'Super Admin' || currentUser?.role === 'Owner' || currentUser?.role === 'Admin';
+  const isAdminOrAbove = !currentUser || currentUser?.role === 'Super Admin' || currentUser?.role === 'Owner' || currentUser?.role === 'Admin' || currentUser?.role === 'Manager';
   
   // Resolved logged-in employee record matching currentUser
   const userEmp = React.useMemo(() => {
@@ -177,6 +183,7 @@ export const HRISView: React.FC<HRISViewProps> = ({
   // Payroll Filter States
   const [payrollMonth, setPayrollMonth] = useState(new Date().getMonth() + 1);
   const [payrollYear, setPayrollYear] = useState(new Date().getFullYear());
+  const [payrollStatusFilter, setPayrollStatusFilter] = useState<'All' | 'Paid' | 'Pending'>('All');
 
   // Modal States
   const [isAddEmpModalOpen, setIsAddEmpModalOpen] = useState(false);
@@ -387,6 +394,15 @@ export const HRISView: React.FC<HRISViewProps> = ({
   const displayPayrolls = payrolls.filter((p) => isOwnEmployeeData(p.employeeId, p.employeeName));
   const currentPayrolls = displayPayrolls.filter((p) => p.month === payrollMonth && p.year === payrollYear);
   const totalPayrollBudget = currentPayrolls.reduce((sum, p) => sum + p.netSalary, 0);
+
+  const paidPayrollsCount = currentPayrolls.filter((p) => p.paymentStatus === 'Paid').length;
+  const pendingPayrollsCount = currentPayrolls.filter((p) => p.paymentStatus !== 'Paid').length;
+
+  const visiblePayrolls = currentPayrolls.filter((p) => {
+    if (payrollStatusFilter === 'Paid') return p.paymentStatus === 'Paid';
+    if (payrollStatusFilter === 'Pending') return p.paymentStatus !== 'Paid';
+    return true;
+  });
 
   // --- Geolocation & Camera Functions ---
   const requestLocation = React.useCallback(() => {
@@ -1701,14 +1717,26 @@ export const HRISView: React.FC<HRISViewProps> = ({
                         )}
                       </td>
                       <td className="p-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedAttDetail(att)}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 font-bold text-[11px] rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1"
-                        >
-                          <Eye className="w-3 h-3" />
-                          <span>Detail</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAttDetail(att)}
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 font-bold text-[11px] rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>Detail</span>
+                          </button>
+                          {isAdminOrAbove && att.id && onDeleteAttendance && (
+                            <button
+                              type="button"
+                              onClick={() => onDeleteAttendance(att.id)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Hapus Presensi"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1766,17 +1794,29 @@ export const HRISView: React.FC<HRISViewProps> = ({
                     <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-extrabold rounded-lg border border-indigo-200">
                       {leave.leaveType}
                     </span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                        leave.status === 'Approved'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : leave.status === 'Rejected'
-                          ? 'bg-rose-50 text-rose-700 border-rose-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}
-                    >
-                      {leave.status}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                          leave.status === 'Approved'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : leave.status === 'Rejected'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}
+                      >
+                        {leave.status}
+                      </span>
+                      {leave.id && (isAdminOrAbove || leave.employeeId === userEmp?.id) && onDeleteLeaveRequest && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteLeaveRequest(leave.id)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Hapus Pengajuan Cuti"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -1843,6 +1883,16 @@ export const HRISView: React.FC<HRISViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsExcelExportModalOpen(true)}
+                className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Ekspor Laporan Penggajian & PPh 21 ke format Microsoft Excel (*.xlsx)"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <span>Ekspor Excel (.xlsx)</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -1917,12 +1967,88 @@ export const HRISView: React.FC<HRISViewProps> = ({
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900">
                   Daftar Penggajian Karyawan — Periode Bulan {payrollMonth} / {payrollYear}
                 </h3>
-                <p className="text-xs text-slate-400">Total Karyawan Terdaftar: {currentPayrolls.length} orang</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Menampilkan <span className="font-bold text-slate-700">{visiblePayrolls.length}</span> dari {currentPayrolls.length} slip gaji
+                  {payrollStatusFilter !== 'All' && (
+                    <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                      Filter: {payrollStatusFilter === 'Paid' ? 'Lunas (Paid)' : 'Belum Lunas (Pending)'}
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {/* Status Filter Toggle & Dropdown */}
+                <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200 text-xs font-bold gap-1">
+                  <span className="text-[11px] text-slate-500 font-semibold px-2 flex items-center gap-1">
+                    <Filter className="w-3 h-3 text-slate-400" />
+                    Status:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPayrollStatusFilter('All')}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      payrollStatusFilter === 'All'
+                        ? 'bg-white text-slate-900 shadow-xs font-black'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    <span>Semua</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
+                      payrollStatusFilter === 'All' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {currentPayrolls.length}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPayrollStatusFilter('Paid')}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      payrollStatusFilter === 'Paid'
+                        ? 'bg-emerald-600 text-white shadow-xs font-black'
+                        : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span>Lunas (Paid)</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
+                      payrollStatusFilter === 'Paid' ? 'bg-white text-emerald-800' : 'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      {paidPayrollsCount}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPayrollStatusFilter('Pending')}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      payrollStatusFilter === 'Pending'
+                        ? 'bg-amber-500 text-white shadow-xs font-black'
+                        : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
+                    <span>Pending</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
+                      payrollStatusFilter === 'Pending' ? 'bg-white text-amber-900' : 'bg-amber-100 text-amber-900'
+                    }`}>
+                      {pendingPayrollsCount}
+                    </span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsExcelExportModalOpen(true)}
+                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Unduh Excel Periode Ini</span>
+                </button>
               </div>
             </div>
 
@@ -1942,85 +2068,127 @@ export const HRISView: React.FC<HRISViewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {currentPayrolls.map((p) => {
-                  const isEmployerBorne = p.pph21PaidBy === 'Perusahaan' || (p.pph21EmployeeDeduction === 0 && (p.pph21Amount || 0) > 0);
-                  const pph21Val = p.pph21Amount || 0;
-
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50">
-                      <td className="p-3 font-bold text-slate-900">
-                        <div>{p.employeeName}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{p.payrollCode}</div>
-                      </td>
-                      <td className="p-3 text-slate-600 font-medium">{p.department}</td>
-                      <td className="p-3 font-semibold text-slate-800">{formatMoney(p.baseSalary)}</td>
-                      <td className="p-3 font-semibold text-emerald-600">+{formatMoney(p.allowances)}</td>
-                      <td className="p-3 font-semibold text-indigo-600">+{formatMoney(p.overtimePay + p.bonus)}</td>
-                      <td className="p-3 font-semibold text-amber-700">-{formatMoney((p.bpjsAmount || 0) + (p.deductions || 0))}</td>
-                      <td className="p-3">
-                        {isEmployerBorne ? (
-                          <div>
-                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[9px] inline-block">
-                              Ditanggung Perusahaan
-                            </span>
-                            <div className="text-[11px] font-bold text-emerald-700 mt-0.5">
-                              Rp {formatMoney(pph21Val)} ({p.terCategory || 'TER A'} {p.terRatePercent ?? 0}%)
-                            </div>
-                            <div className="text-[9px] text-slate-400 font-medium">Potongan THP: Rp 0</div>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="font-bold text-rose-600">-{formatMoney(pph21Val)}</div>
-                            <div className="text-[10px] text-indigo-700 font-bold">
-                              {p.terCategory || 'TER A'} ({p.terRatePercent ?? 0}%)
-                            </div>
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-3 font-black text-slate-900 text-sm">{formatMoney(p.netSalary)}</td>
-                      <td className="p-3">
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                            p.paymentStatus === 'Paid'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : p.paymentStatus === 'Approved'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
-                        >
-                          {p.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
-                        <button
-                          onClick={() => setSelectedPayslip(p)}
-                          className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                          title="Lihat Slip Gaji Lengkap"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Slip Gaji</span>
-                        </button>
-                        <button
-                          onClick={() => handleDownloadPayslipPDF(p)}
-                          className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/80 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                          title="Export dan Download PDF Resmi"
-                        >
-                          <Download className="w-3.5 h-3.5 text-indigo-600" />
-                          <span>Unduh PDF</span>
-                        </button>
-                        {isAdminOrAbove && p.paymentStatus !== 'Paid' && p.id && (
+                {visiblePayrolls.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="p-10 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
+                        <CreditCard className="w-8 h-8 text-slate-300 stroke-[1.5]" />
+                        <p className="text-sm font-semibold text-slate-600">
+                          {payrollStatusFilter === 'All'
+                            ? `Belum ada slip gaji yang digenerate untuk Bulan ${payrollMonth}/${payrollYear}`
+                            : `Tidak ditemukan slip gaji dengan status "${payrollStatusFilter === 'Paid' ? 'Lunas (Paid)' : 'Pending'}" pada periode ini.`}
+                        </p>
+                        {payrollStatusFilter !== 'All' ? (
                           <button
-                            onClick={() => onUpdatePayrollStatus(p.id!, 'Paid')}
-                            className="px-2.5 py-1 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            type="button"
+                            onClick={() => setPayrollStatusFilter('All')}
+                            className="mt-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-colors cursor-pointer border border-blue-200"
                           >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Tandai Lunas</span>
+                            Tampilkan Semua ({currentPayrolls.length} slip gaji)
                           </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                        ) : isAdminOrAbove ? (
+                          <button
+                            type="button"
+                            onClick={() => onGenerateMonthlyPayroll(payrollMonth, payrollYear)}
+                            className="mt-1 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Hitung & Autogenerate Slip Gaji Sekarang</span>
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  visiblePayrolls.map((p) => {
+                    const isEmployerBorne = p.pph21PaidBy === 'Perusahaan' || (p.pph21EmployeeDeduction === 0 && (p.pph21Amount || 0) > 0);
+                    const pph21Val = p.pph21Amount || 0;
+
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-50">
+                        <td className="p-3 font-bold text-slate-900">
+                          <div>{p.employeeName}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">{p.payrollCode}</div>
+                        </td>
+                        <td className="p-3 text-slate-600 font-medium">{p.department}</td>
+                        <td className="p-3 font-semibold text-slate-800">{formatMoney(p.baseSalary)}</td>
+                        <td className="p-3 font-semibold text-emerald-600">+{formatMoney(p.allowances)}</td>
+                        <td className="p-3 font-semibold text-indigo-600">+{formatMoney(p.overtimePay + p.bonus)}</td>
+                        <td className="p-3 font-semibold text-amber-700">-{formatMoney((p.bpjsAmount || 0) + (p.deductions || 0))}</td>
+                        <td className="p-3">
+                          {isEmployerBorne ? (
+                            <div>
+                              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[9px] inline-block">
+                                Ditanggung Perusahaan
+                              </span>
+                              <div className="text-[11px] font-bold text-emerald-700 mt-0.5">
+                                Rp {formatMoney(pph21Val)} ({p.terCategory || 'TER A'} {p.terRatePercent ?? 0}%)
+                              </div>
+                              <div className="text-[9px] text-slate-400 font-medium">Potongan THP: Rp 0</div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="font-bold text-rose-600">-{formatMoney(pph21Val)}</div>
+                              <div className="text-[10px] text-indigo-700 font-bold">
+                                {p.terCategory || 'TER A'} ({p.terRatePercent ?? 0}%)
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3 font-black text-slate-900 text-sm">{formatMoney(p.netSalary)}</td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                              p.paymentStatus === 'Paid'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : p.paymentStatus === 'Approved'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}
+                          >
+                            {p.paymentStatus}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                          <button
+                            onClick={() => setSelectedPayslip(p)}
+                            className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            title="Lihat Slip Gaji Lengkap"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Slip Gaji</span>
+                          </button>
+                          <button
+                            onClick={() => handleDownloadPayslipPDF(p)}
+                            className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/80 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            title="Export dan Download PDF Resmi"
+                          >
+                            <Download className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Unduh PDF</span>
+                          </button>
+                          {isAdminOrAbove && p.paymentStatus !== 'Paid' && p.id && (
+                            <button
+                              onClick={() => onUpdatePayrollStatus(p.id!, 'Paid')}
+                              className="px-2.5 py-1 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Tandai Lunas</span>
+                            </button>
+                          )}
+                          {isAdminOrAbove && p.id && onDeletePayroll && (
+                            <button
+                              onClick={() => onDeletePayroll(p.id!)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer inline-flex items-center"
+                              title="Hapus Slip Payroll"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -2358,20 +2526,37 @@ export const HRISView: React.FC<HRISViewProps> = ({
                 Tutup
               </button>
 
-              {isAdminOrAbove && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingEmployee(viewingEmployee);
-                    setViewingEmployee(null);
-                    setIsAddEmpModalOpen(true);
-                  }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Edit className="w-3.5 h-3.5" />
-                  <span>Edit Data Karyawan</span>
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {isAdminOrAbove && viewingEmployee?.id && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = viewingEmployee.id;
+                      setViewingEmployee(null);
+                      onDeleteEmployee(id);
+                    }}
+                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Karyawan</span>
+                  </button>
+                )}
+
+                {isAdminOrAbove && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingEmployee(viewingEmployee);
+                      setViewingEmployee(null);
+                      setIsAddEmpModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Edit Data Karyawan</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -2897,20 +3082,37 @@ export const HRISView: React.FC<HRISViewProps> = ({
                 </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsAddEmpModalOpen(false)}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
-                >
-                  Simpan Data Karyawan Enterprise
-                </button>
+              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between gap-2 shrink-0">
+                {editingEmployee && editingEmployee.id && isAdminOrAbove ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = editingEmployee.id;
+                      setIsAddEmpModalOpen(false);
+                      onDeleteEmployee(id);
+                    }}
+                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Karyawan</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddEmpModalOpen(false)}
+                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
+                  >
+                    Simpan Data Karyawan Enterprise
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -3217,6 +3419,20 @@ export const HRISView: React.FC<HRISViewProps> = ({
                 >
                   Tutup
                 </button>
+                {isAdminOrAbove && selectedPayslip?.id && onDeletePayroll && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = selectedPayslip.id;
+                      setSelectedPayslip(null);
+                      onDeletePayroll(id);
+                    }}
+                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Slip Gaji</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -4141,6 +4357,19 @@ export const HRISView: React.FC<HRISViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* --- PAYROLL EXCEL EXPORT MODAL --- */}
+      <PayrollExcelExportModal
+        isOpen={isExcelExportModalOpen}
+        onClose={() => setIsExcelExportModalOpen(false)}
+        payrolls={payrolls}
+        employees={employees}
+        currentMonth={payrollMonth}
+        currentYear={payrollYear}
+        companyProfile={companyProfile}
+        currency={currency}
+        onSuccess={(msg) => setToastMessage(msg)}
+      />
 
       {/* --- TOAST NOTIFICATION BANNER --- */}
       {toastMessage && (

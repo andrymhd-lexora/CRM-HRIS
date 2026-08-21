@@ -276,12 +276,9 @@ export const QuotationsView: React.FC<QuotationsViewProps> = ({
                         </button>
                         {q.id && (
                           <button
-                            onClick={() => {
-                              if (confirm(`Hapus quotation ${q.quotationNumber}?`)) {
-                                onDeleteQuotation(String(q.id));
-                              }
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            onClick={() => onDeleteQuotation(String(q.id))}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Hapus Penawaran"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

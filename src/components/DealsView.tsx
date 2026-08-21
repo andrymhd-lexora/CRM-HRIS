@@ -345,12 +345,24 @@ export const DealsView: React.FC<DealsViewProps> = ({
                             )}
                           </div>
 
-                          <button
-                            onClick={() => handleOpenEditModal(deal)}
-                            className="p-1 text-slate-400 hover:text-amber-600 rounded-md"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(deal)}
+                              className="p-1 text-slate-400 hover:text-amber-600 rounded-md cursor-pointer"
+                              title="Edit Deal"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            {deal.id && (
+                              <button
+                                onClick={() => onDeleteDeal(String(deal.id))}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded-md cursor-pointer"
+                                title="Hapus Deal"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-xs space-y-0.5">
@@ -435,9 +447,20 @@ export const DealsView: React.FC<DealsViewProps> = ({
                       </span>
                     </td>
                     <td className="py-4 px-4 text-right">
-                      <button onClick={() => handleOpenEditModal(d)} className="p-1 text-slate-400 hover:text-amber-600">
-                        <Edit className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button onClick={() => handleOpenEditModal(d)} className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" title="Edit Deal">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        {d.id && (
+                          <button
+                            onClick={() => onDeleteDeal(String(d.id))}
+                            className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                            title="Hapus Deal"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -590,20 +613,37 @@ export const DealsView: React.FC<DealsViewProps> = ({
                 </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-500/20 transition-colors"
-                >
-                  {editingDeal ? 'Simpan Perubahan' : 'Simpan Deal'}
-                </button>
+              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between gap-2 shrink-0">
+                {editingDeal && editingDeal.id ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = String(editingDeal.id);
+                      setIsModalOpen(false);
+                      onDeleteDeal(id);
+                    }}
+                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Deal</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-500/20 transition-colors cursor-pointer"
+                  >
+                    {editingDeal ? 'Simpan Perubahan' : 'Simpan Deal'}
+                  </button>
+                </div>
               </div>
 
             </form>

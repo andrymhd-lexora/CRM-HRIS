@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ActiveView, HRISTab, UserProfile, CompanyProfile } from '../types/crm';
+import { useLanguage } from '../context/LanguageContext';
 import {
   LayoutDashboard,
   Users,
@@ -25,7 +26,8 @@ import {
   CreditCard,
   Clock,
   Layers,
-  ShieldCheck
+  ShieldCheck,
+  Globe
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -61,32 +63,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
   companyProfile,
   currentUser
 }) => {
+  const { language, setLanguage, toggleLanguage, t } = useLanguage();
   const [isCrmOpen, setIsCrmOpen] = useState(true);
   const [isHrisOpen, setIsHrisOpen] = useState(true);
 
-  const isAdminOrAbove = currentUser?.role === 'Super Admin' || currentUser?.role === 'Owner' || currentUser?.role === 'Admin';
+  const isAdminOrAbove =
+    currentUser?.role === 'Super Admin' ||
+    currentUser?.role === 'Owner' ||
+    currentUser?.role === 'Admin';
   const isStaff = currentUser?.role === 'Staff';
 
   const crmNavItems = [
-    { id: 'dashboard' as ActiveView, label: 'Dashboard Utama', icon: LayoutDashboard },
-    { id: 'companies' as ActiveView, label: 'Companies (Perusahaan)', icon: Building2, badge: counts.companies },
-    { id: 'contacts' as ActiveView, label: 'Contacts (PIC)', icon: Users, badge: counts.contacts },
-    { id: 'leads' as ActiveView, label: 'Leads Pipeline', icon: Target, badge: counts.leads },
-    { id: 'deals' as ActiveView, label: 'Deals Pipeline', icon: CircleDollarSign, badge: counts.deals },
-    { id: 'quotations' as ActiveView, label: 'Quotations (Penawaran)', icon: FileText, badge: counts.quotations },
-    { id: 'customers' as ActiveView, label: 'Customers (Closing)', icon: Award, badge: counts.customers },
-    { id: 'tasks' as ActiveView, label: 'Tasks & Activity', icon: CheckSquare, badge: counts.tasks },
-    { id: 'analytics' as ActiveView, label: 'Analytics & Reports', icon: BarChart3 },
-    { id: 'pipeline' as ActiveView, label: 'Pipeline Config', icon: SlidersHorizontal }
+    { id: 'dashboard' as ActiveView, label: t.nav.dashboard, icon: LayoutDashboard },
+    { id: 'companies' as ActiveView, label: t.nav.companies, icon: Building2, badge: counts.companies },
+    { id: 'contacts' as ActiveView, label: t.nav.contacts, icon: Users, badge: counts.contacts },
+    { id: 'leads' as ActiveView, label: t.nav.leads, icon: Target, badge: counts.leads },
+    { id: 'deals' as ActiveView, label: t.nav.deals, icon: CircleDollarSign, badge: counts.deals },
+    { id: 'quotations' as ActiveView, label: t.nav.quotations, icon: FileText, badge: counts.quotations },
+    { id: 'customers' as ActiveView, label: t.nav.customers, icon: Award, badge: counts.customers },
+    { id: 'tasks' as ActiveView, label: t.nav.tasks, icon: CheckSquare, badge: counts.tasks },
+    { id: 'analytics' as ActiveView, label: t.nav.analytics, icon: BarChart3 },
+    { id: 'pipeline' as ActiveView, label: t.nav.pipeline, icon: SlidersHorizontal }
   ];
 
   const hrisSubItems = [
-    { tab: 'overview' as HRISTab, label: 'Overview & Absensi', icon: Clock },
-    { tab: 'employees' as HRISTab, label: 'Database Karyawan', icon: Users, badge: counts.employees !== undefined ? `${counts.employees}` : undefined },
-    { tab: 'attendance' as HRISTab, label: 'Log Kehadiran', icon: CalendarDays },
-    { tab: 'leave' as HRISTab, label: 'Pengajuan Cuti', icon: FileText, badge: counts.pendingLeaves !== undefined && counts.pendingLeaves > 0 ? `${counts.pendingLeaves}` : undefined },
-    { tab: 'payroll' as HRISTab, label: 'Gaji & Slip Gaji', icon: CreditCard },
-    ...(!isStaff ? [{ tab: 'reports' as HRISTab, label: 'Laporan HR', icon: BarChart3 }] : [])
+    { tab: 'overview' as HRISTab, label: t.hrisTabs.overview, icon: Clock },
+    { tab: 'employees' as HRISTab, label: t.hrisTabs.employees, icon: Users, badge: counts.employees !== undefined ? `${counts.employees}` : undefined },
+    { tab: 'attendance' as HRISTab, label: t.hrisTabs.attendance, icon: CalendarDays },
+    { tab: 'leave' as HRISTab, label: t.hrisTabs.leave, icon: FileText, badge: counts.pendingLeaves !== undefined && counts.pendingLeaves > 0 ? `${counts.pendingLeaves}` : undefined },
+    { tab: 'payroll' as HRISTab, label: t.hrisTabs.payroll, icon: CreditCard },
+    ...(!isStaff ? [{ tab: 'reports' as HRISTab, label: t.hrisTabs.reports, icon: BarChart3 }] : [])
   ];
 
   const handleNavClick = (view: ActiveView, hrisTab?: HRISTab) => {
@@ -96,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const displayName = companyProfile?.companyName || companyName || 'ErmApps';
   const logoUrl = companyProfile?.logoUrl;
-  const legalName = companyProfile?.legalName || 'Enterprise HRIS & CRM';
+  const legalName = companyProfile?.legalName || (language === 'id' ? 'Enterprise HRIS & CRM' : 'Enterprise HRIS & CRM');
 
   return (
     <>
@@ -124,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {logoUrl ? (
               <img
                 src={logoUrl}
-                alt="Logo Perusahaan"
+                alt="Logo"
                 className="w-9 h-9 rounded-xl object-contain bg-slate-50 p-1 border border-slate-200/80 shadow-xs group-hover:scale-105 transition-transform shrink-0"
               />
             ) : (
@@ -138,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {displayName}
                 </span>
               </div>
-              <p className="text-[10px] font-semibold text-slate-400 truncate">
+              <p className="text-[10px] text-slate-400 font-semibold truncate leading-tight">
                 {legalName}
               </p>
             </div>
@@ -146,48 +152,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             onClick={() => setIsOpenMobile(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 lg:hidden shrink-0"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 lg:hidden"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
-          
-          {/* PORTAL / LANDING */}
-          <div>
-            <div className="px-3 pb-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-              Portal Perusahaan
-            </div>
-            <button
-              onClick={() => handleNavClick('landing')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeView === 'landing'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
-                  : 'text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 shrink-0" />
-                <span>Showcase Landing Overview</span>
-              </div>
-              <span className="text-[9px] font-extrabold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md">
-                PORTAL
-              </span>
-            </button>
-          </div>
+        {/* Navigation List */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 text-xs font-medium custom-scrollbar">
+          {/* Quick Portal Switch */}
+          <button
+            onClick={() => handleNavClick('landing')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+              activeView === 'landing'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{t.nav.landing}</span>
+          </button>
 
-          {/* CRM MODULES ACCORDION */}
+          {/* CRM & SALES SECTION */}
           <div className="space-y-1">
             <button
               onClick={() => setIsCrmOpen(!isCrmOpen)}
-              className="w-full px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 hover:text-slate-600 flex items-center justify-between transition-colors cursor-pointer group"
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors group cursor-pointer"
             >
-              <span className="flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-blue-500" />
-                CRM Modules
-              </span>
+              <span>{t.nav.crmSection}</span>
               <div className="p-0.5 rounded-md group-hover:bg-slate-100">
                 {isCrmOpen ? (
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -198,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             {isCrmOpen && (
-              <div className="space-y-0.5 pl-1 transition-all">
+              <div className="space-y-0.5 transition-all">
                 {crmNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeView === item.id;
@@ -208,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={() => handleNavClick(item.id)}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                         isActive
-                          ? 'bg-blue-50 text-blue-600 border border-blue-100/80 shadow-2xs'
+                          ? 'bg-blue-50 text-blue-600 border border-blue-100/80 font-bold shadow-2xs'
                           : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                       }`}
                     >
@@ -216,12 +208,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
                         <span>{item.label}</span>
                       </div>
-                      {!isStaff && item.badge !== undefined && (
+                      {item.badge !== undefined && item.badge > 0 && (
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            isActive
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-slate-100 text-slate-600 border border-slate-200/60'
+                          className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                            isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
                           }`}
                         >
                           {item.badge}
@@ -234,25 +224,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
 
-          {/* HRIS SYSTEM ACCORDION */}
+          {/* HRIS & WORKFORCE SUITE SECTION */}
           <div className="space-y-1">
             <button
               onClick={() => setIsHrisOpen(!isHrisOpen)}
-              className="w-full px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 hover:text-slate-600 flex items-center justify-between transition-colors cursor-pointer group"
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors group cursor-pointer"
             >
-              <span className="flex items-center gap-1.5">
-                <UserCheck className="w-3.5 h-3.5 text-indigo-500" />
-                Sistem HRIS & Kepegawaian
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                <span>{t.nav.hrisSection}</span>
+              </div>
               <div className="flex items-center gap-1">
                 {counts.pendingLeaves && counts.pendingLeaves > 0 ? (
-                  <span className="px-1.5 py-0.5 bg-amber-500 text-white font-black text-[9px] rounded-full animate-pulse flex items-center gap-0.5 shadow-xs" title={`${counts.pendingLeaves} pengajuan cuti menunggu persetujuan HR`}>
+                  <span className="px-1.5 py-0.2 bg-amber-500 text-white text-[8px] font-black rounded-md flex items-center gap-0.5 animate-pulse">
                     <FileText className="w-2.5 h-2.5" />
-                    {counts.pendingLeaves} CUTI
+                    {counts.pendingLeaves} {language === 'id' ? 'CUTI' : 'LEAVE'}
                   </span>
                 ) : (
                   <span className="px-1.5 py-0.2 bg-indigo-50 text-indigo-600 text-[8px] font-extrabold rounded-md">
-                    NEW
+                    TER 2024
                   </span>
                 )}
                 <div className="p-0.5 rounded-md group-hover:bg-slate-100">
@@ -295,7 +285,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               : 'bg-indigo-100 text-indigo-800'
                         }`}>
                           {item.tab === 'leave' && counts.pendingLeaves && counts.pendingLeaves > 0 && <FileText className="w-2.5 h-2.5" />}
-                          {item.badge} {item.tab === 'leave' && counts.pendingLeaves && counts.pendingLeaves > 0 ? 'PENDING' : ''}
+                          {item.badge} {item.tab === 'leave' && counts.pendingLeaves && counts.pendingLeaves > 0 ? (language === 'id' ? 'PENDING' : 'PENDING') : ''}
                         </span>
                       )}
                     </button>
@@ -309,7 +299,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {isAdminOrAbove && (
             <div>
               <div className="px-3 pb-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-                Pengaturan Sistem
+                {t.nav.systemSection}
               </div>
               <button
                 onClick={() => handleNavClick('settings')}
@@ -321,16 +311,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <div className="flex items-center gap-2.5">
                   <Settings className={`w-4 h-4 shrink-0 ${activeView === 'settings' ? 'text-blue-600' : 'text-slate-400'}`} />
-                  <span>Pengaturan & Undangan</span>
+                  <span>{t.nav.settings}</span>
                 </div>
               </button>
             </div>
           )}
-
         </div>
 
-        {/* Footer Database Engine Badge */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+        {/* Footer: Language Switcher & Database Engine Badge */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50/50 space-y-2">
+          {/* Quick Language Toggle */}
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 text-[11px] shadow-2xs">
+            <span className="flex items-center gap-1.5 font-bold text-slate-700">
+              <Globe className="w-3.5 h-3.5 text-blue-600" />
+              <span>{language === 'id' ? 'Bahasa' : 'Language'}</span>
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setLanguage('id')}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  language === 'id' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-700'
+                }`}
+              >
+                ID
+              </button>
+              <span className="text-slate-300">/</span>
+              <button
+                type="button"
+                onClick={() => setLanguage('en')}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  language === 'en' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-700'
+                }`}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+
           <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 text-[11px] text-slate-500 space-y-1 shadow-2xs">
             <div className="flex items-center justify-between font-semibold text-slate-700">
               <span className="flex items-center gap-1.5">
@@ -340,7 +358,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <p className="text-[10px] text-slate-400 leading-tight">
-              Single-Tenant Cloud Database. Sinkronisasi multi-user real-time.
+              {language === 'id'
+                ? 'Single-Tenant Cloud Database. Sinkronisasi multi-user real-time.'
+                : 'Single-Tenant Cloud Database. Real-time multi-user synchronization.'}
             </p>
           </div>
         </div>

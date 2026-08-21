@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActiveView, UserProfile } from '../types/crm';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Sparkles,
   Zap,
@@ -23,7 +24,8 @@ import {
   FileSpreadsheet,
   LogIn,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  Globe
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -41,6 +43,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   currentUser,
   onLogout
 }) => {
+  const { language, setLanguage, t } = useLanguage();
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 pb-16 flex flex-col">
       {/* Standalone Landing Page Header Navbar */}
@@ -52,17 +56,47 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-slate-900 tracking-tight text-base">ErmApps</span>
+              <span className="font-extrabold text-slate-900 tracking-tight text-base">{t.appName}</span>
               <span className="px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold tracking-wider uppercase border border-blue-100">
-                SaaS Enterprise
+                {t.enterpriseBadge}
               </span>
             </div>
-            <p className="text-[10px] font-semibold text-slate-400">CRM & HRIS Real-Time System</p>
+            <p className="text-[10px] font-semibold text-slate-400">{t.appSubtitle}</p>
           </div>
         </div>
 
-        {/* Action Controls */}
+        {/* Action Controls & Language Switch */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Language Switcher */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
+            <button
+              type="button"
+              onClick={() => setLanguage('id')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                language === 'id'
+                  ? 'bg-white text-blue-600 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="Bahasa Indonesia"
+            >
+              <span>🇮🇩</span>
+              <span className="hidden sm:inline">ID</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                language === 'en'
+                  ? 'bg-white text-blue-600 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="English"
+            >
+              <span>🇬🇧</span>
+              <span className="hidden sm:inline">EN</span>
+            </button>
+          </div>
+
           {currentUser ? (
             <div className="flex items-center gap-2">
               <button
@@ -70,14 +104,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 className="flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-102 cursor-pointer"
               >
                 <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden xs:inline">Buka Sistem</span>
+                <span className="hidden xs:inline">{t.actions.openSystem}</span>
                 <span className="text-blue-100 font-semibold">({currentUser.displayName || currentUser.email.split('@')[0]})</span>
               </button>
               {onLogout && (
                 <button
                   onClick={onLogout}
                   className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200/60 transition-colors cursor-pointer"
-                  title="Keluar (Logout)"
+                  title={t.actions.logout}
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -91,7 +125,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-102 cursor-pointer"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span>Masuk / Undangan Admin</span>
+                  <span>{t.actions.login}</span>
                 </button>
               )}
             </div>
@@ -102,24 +136,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Hero Section */}
       <section className="relative overflow-hidden py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white via-slate-50 to-slate-100/60 border-b border-slate-200/80">
         <div className="max-w-5xl mx-auto text-center space-y-8 relative z-10">
-          
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold shadow-xs">
             <Cloud className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
-            <span>Enterprise Cloud Multi-User • Firebase Firestore Real-Time Sync</span>
+            <span>{t.landing.heroBadge} • Firebase Firestore Real-Time Sync</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12]">
-            Platform CRM & HRIS Enterprise.{' '}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.14]">
+            {t.landing.heroTitle}{' '}
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-teal-500 bg-clip-text text-transparent">
-              Kolaborasi Multi-User Real-Time.
+              {t.landing.heroHighlight}
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Sistem SaaS lengkap untuk tim operasional perusahaan. Menggabungkan CRM Sales Pipeline dan Sistem Kepegawaian HRIS (Database Karyawan, Presensi Terminal, Pengajuan Cuti, Payroll Slip Gaji, & Kode Undangan Internal) berbasis Cloud Firestore.
+          <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            {t.landing.heroDesc}
           </p>
 
           {/* Feature Badges */}
@@ -127,12 +160,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {[
               'Cloud Firestore Real-Time',
               'Single-Tenant Multi-User',
-              'Kode Undangan Internal',
-              'Sistem HRIS & Payroll',
-              'Presensi & Cuti Karyawan',
-              'Kanban Sales Pipeline',
-              'Direct WhatsApp Web',
-              'Role Access Control'
+              'Internal Invite Codes',
+              'HRIS & PPh 21 TER Engine',
+              'Camera & GPS Attendance',
+              'Kanban Deals Pipeline',
+              'WhatsApp Integration',
+              'Role Access Control (RBAC)'
             ].map((f, i) => (
               <span
                 key={i}
@@ -152,7 +185,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl text-sm shadow-xl shadow-blue-500/25 flex items-center gap-2 transition-all hover:scale-102 cursor-pointer"
               >
                 <LayoutDashboard className="w-5 h-5" />
-                <span>Masuk ke Dashboard Sistem</span>
+                <span>{t.landing.ctaPrimary}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
@@ -162,7 +195,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   className="px-8 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-teal-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-2xl text-sm shadow-xl shadow-blue-500/30 flex items-center gap-2.5 transition-all hover:scale-102 cursor-pointer"
                 >
                   <LogIn className="w-5 h-5" />
-                  <span>Masuk Ke Sistem / Gunakan Kode Undangan</span>
+                  <span>{t.landing.ctaPrimary}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               )
@@ -178,10 +211,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div>
               <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
                 <Zap className="w-5 h-5 text-amber-500" />
-                Modul Operational System
+                {language === 'id' ? 'Modul Operasional Terintegrasi' : 'Integrated Operational Modules'}
               </h2>
               <p className="text-xs text-slate-500">
-                Akses terintegrasi ke modul CRM & HRIS Cloud Firestore real-time.
+                {language === 'id'
+                  ? 'Akses terpadu ke seluruh modul CRM penjualan & HRIS kepegawaian real-time.'
+                  : 'Unified access across all Sales CRM & HR Workforce real-time modules.'}
               </p>
             </div>
             <button
@@ -194,20 +229,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               }}
               className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-blue-200/60 transition-colors cursor-pointer"
             >
-              <span>{currentUser ? 'Lihat Executive Dashboard' : 'Login untuk Akses Dashboard'}</span>
+              <span>{currentUser ? (language === 'id' ? 'Buka Dashboard' : 'Open Dashboard') : (language === 'id' ? 'Masuk untuk Akses' : 'Sign in to Access')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
             {[
-              { id: 'hris' as ActiveView, label: 'HRIS & Payroll', icon: UserCheck, desc: 'Presensi, Cuti & Slip Gaji', highlight: true },
-              { id: 'contacts' as ActiveView, label: 'Contacts', icon: Users, desc: 'Direct WA & Email' },
-              { id: 'leads' as ActiveView, label: 'Leads', icon: Target, desc: 'Kanban & Scoring' },
-              { id: 'deals' as ActiveView, label: 'Deals', icon: CircleDollarSign, desc: 'Sales Pipeline' },
-              { id: 'tasks' as ActiveView, label: 'Tasks', icon: CheckSquare, desc: 'Priority & Due Dates' },
-              { id: 'analytics' as ActiveView, label: 'Analytics', icon: BarChart3, desc: 'Interactive Charts' },
-              { id: 'settings' as ActiveView, label: 'Settings & Users', icon: KeyRound, desc: 'Undangan & Sync' }
+              { id: 'hris' as ActiveView, label: t.nav.hris, icon: UserCheck, desc: language === 'id' ? 'Presensi, Cuti & Gaji' : 'Attendance & Payroll', highlight: true },
+              { id: 'contacts' as ActiveView, label: t.nav.contacts, icon: Users, desc: 'WhatsApp & Email' },
+              { id: 'leads' as ActiveView, label: t.nav.leads, icon: Target, desc: 'Kanban & Scoring' },
+              { id: 'deals' as ActiveView, label: t.nav.deals, icon: CircleDollarSign, desc: 'Sales Pipeline' },
+              { id: 'tasks' as ActiveView, label: t.nav.tasks, icon: CheckSquare, desc: 'Priority & Due Dates' },
+              { id: 'analytics' as ActiveView, label: t.nav.analytics, icon: BarChart3, desc: 'Interactive Charts' },
+              { id: 'settings' as ActiveView, label: t.nav.settings, icon: KeyRound, desc: 'Invites & Roles' }
             ].map((m) => {
               const Icon = m.icon;
               return (
@@ -236,45 +271,49 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* Database & Multi-User Architecture Highlights */}
+      {/* Feature Highlights Grid */}
       <section className="max-w-6xl mx-auto py-16 px-4 sm:px-6 space-y-12">
         <div className="text-center space-y-3">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Arsitektur Database Enterprise & Akses Terverifikasi
+            {language === 'id'
+              ? 'Arsitektur Enterprise Berstandar Cloud & Pajak Resmi'
+              : 'Enterprise Cloud Architecture & Official Tax Compliance'}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-            Dirancang khusus untuk kebutuhan internal perusahaan dengan sinkronisasi Cloud Firestore dan kontrol hak akses berbasis peran.
+            {language === 'id'
+              ? 'Dirancang khusus untuk kebutuhan operasional dengan sinkronisasi Cloud Firestore dan kontrol hak akses berbasis peran.'
+              : 'Engineered for seamless business workflows with Firestore real-time sync and role-based security.'}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <Cloud className="w-5 h-5" />
+              <CircleDollarSign className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-slate-900">Cloud Firestore Real-Time</h3>
+            <h3 className="font-bold text-base text-slate-900">{t.landing.crmFeatureTitle}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Perubahan status lead, deals, tugas, dan presensi karyawan langsung tersinkronisasi secara otomatis ke seluruh layar tim secara real-time.
+              {t.landing.crmFeatureDesc}
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-              <KeyRound className="w-5 h-5" />
+              <UserCheck className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-slate-900">Sistem Kode Undangan Internal</h3>
+            <h3 className="font-bold text-base text-slate-900">{t.landing.hrisFeatureTitle}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Registrasi karyawan dan manajer terkontrol melalui kode undangan unik (1-time use) yang dibuat oleh HR/Admin perusahaan.
+              {t.landing.hrisFeatureDesc}
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
             <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-              <Shield className="w-5 h-5" />
+              <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-slate-900">Role-Based Access Control</h3>
+            <h3 className="font-bold text-base text-slate-900">{t.landing.payrollFeatureTitle}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Dukungan peran fleksibel: Super Admin, HR Manager, Sales Manager, dan Employee dengan visibilitas data sesuai tanggung jawab.
+              {t.landing.payrollFeatureDesc}
             </p>
           </div>
         </div>
@@ -285,10 +324,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 space-y-6">
           <div className="text-center space-y-2">
             <h3 className="text-xl font-extrabold text-slate-900">
-              Perbandingan: Cloud Firestore CRM vs Aplikasi Tradisional
+              {language === 'id'
+                ? 'Perbandingan: ErmApps SaaS Cloud vs Spreadsheet Terpisah'
+                : 'Comparison: ErmApps SaaS Cloud vs Disconnected Spreadsheets'}
             </h3>
             <p className="text-xs text-slate-500">
-              Keunggulan sistem terintegrasi Firestore real-time dibanding spreadsheet terpisah.
+              {language === 'id'
+                ? 'Keunggulan sistem terintegrasi database real-time dibanding spreadsheet manual.'
+                : 'Key advantages of unified cloud systems over error-prone manual spreadsheets.'}
             </p>
           </div>
 
@@ -296,42 +339,55 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <table className="w-full text-xs text-left">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-400 font-extrabold uppercase tracking-wider">
-                  <th className="py-3 px-4">Fitur / Kriteria</th>
-                  <th className="py-3 px-4 text-blue-600 bg-blue-50/50">ErmApps Firestore Real-Time</th>
-                  <th className="py-3 px-4 text-slate-500">Spreadsheet / CRM Terpisah</th>
+                  <th className="py-3 px-4">{language === 'id' ? 'Fitur / Kriteria' : 'Feature / Criteria'}</th>
+                  <th className="py-3 px-4 text-blue-600 bg-blue-50/50">ErmApps Cloud Real-Time</th>
+                  <th className="py-3 px-4 text-slate-500">{language === 'id' ? 'Spreadsheet Manual' : 'Manual Sheets'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">Sinkronisasi Data Tim</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">
+                    {language === 'id' ? 'Sinkronisasi Data Tim' : 'Team Real-time Sync'}
+                  </td>
                   <td className="py-3 px-4 text-emerald-600 font-bold bg-blue-50/30 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Real-time Firestore Sync
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {language === 'id' ? 'Otomatis Real-Time' : 'Instant Automatic'}
                   </td>
                   <td className="py-3 px-4 text-slate-500 flex items-center gap-1.5">
-                    <XCircle className="w-4 h-4 text-red-400" /> Konflik Manual / Terlambat Update
+                    <XCircle className="w-4 h-4 text-red-400" /> {language === 'id' ? 'Konflik Manual / Telat' : 'Manual conflicts'}
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">Manajemen Registrasi Karyawan</td>
-                  <td className="py-3 px-4 text-emerald-600 font-bold bg-blue-50/30">Sistem Kode Undangan HR</td>
-                  <td className="py-3 px-4 text-slate-500">Pendaftaran Terbuka Tanpa Kontrol</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">
+                    {language === 'id' ? 'Perhitungan PPh 21 TER 2024' : 'PPh 21 TER 2024 Calculation'}
+                  </td>
+                  <td className="py-3 px-4 text-emerald-600 font-bold bg-blue-50/30">
+                    {language === 'id' ? 'Otomatis Sesuai PP 58/2023' : 'Automated Official PP 58/2023'}
+                  </td>
+                  <td className="py-3 px-4 text-slate-500">
+                    {language === 'id' ? 'Rumus Rumit & Rawan Salah' : 'Complex manual formulas'}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">Integrasi HRIS & Payroll</td>
-                  <td className="py-3 px-4 text-emerald-600 font-bold bg-blue-50/30">Terintegrasi Langsung (Presensi & Slip Gaji)</td>
-                  <td className="py-3 px-4 text-slate-500">Perlu Software HR Eksternal Lengkap</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">
+                    {language === 'id' ? 'Presensi GPS & Swafoto Kamera' : 'GPS & Camera Biometric Attendance'}
+                  </td>
+                  <td className="py-3 px-4 text-emerald-600 font-bold bg-blue-50/30">
+                    {language === 'id' ? 'Terintegrasi Geofencing' : 'Integrated Geofencing'}
+                  </td>
+                  <td className="py-3 px-4 text-slate-500">
+                    {language === 'id' ? 'Tidak Tersedia' : 'Not supported'}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">Komunikasi Pelanggan Direct</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">
+                    {language === 'id' ? 'Dukungan Dua Bahasa' : 'Bilingual Support'}
+                  </td>
                   <td className="py-3 px-4 text-emerald-600 font-bold bg-blue-50/30 flex items-center gap-1.5">
-                    <MessageSquare className="w-4 h-4 text-emerald-500" /> Direct WhatsApp Web & Mail
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {language === 'id' ? 'Bahasa Indonesia & English' : 'Bahasa Indonesia & English'}
                   </td>
-                  <td className="py-3 px-4 text-slate-500">Copy-Paste Nomor Manual</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">Backup & Keamanan Data</td>
-                  <td className="py-3 px-4 text-emerald-600 font-bold bg-blue-50/30">Cloud Firestore Rules + JSON Export</td>
-                  <td className="py-3 px-4 text-slate-500">Risiko File Terhapus</td>
+                  <td className="py-3 px-4 text-slate-500">
+                    {language === 'id' ? 'Terbatas' : 'Limited'}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -343,10 +399,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section className="max-w-5xl mx-auto pt-8 px-4 sm:px-6">
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-teal-600 rounded-3xl p-8 sm:p-10 text-white text-center space-y-6 shadow-xl shadow-blue-500/20">
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Mulai Kelola CRM & Kepegawaian Perusahaan Anda
+            {language === 'id'
+              ? 'Mulai Kelola CRM & Kepegawaian Perusahaan Anda'
+              : 'Start Managing Your CRM & Workforce Today'}
           </h2>
           <p className="text-xs sm:text-sm text-blue-100 max-w-lg mx-auto">
-            Platform operasional terintegrasi dengan sinkronisasi Firestore real-time & kontrol hak akses per tingkat jabatan.
+            {language === 'id'
+              ? 'Platform operasional terintegrasi dengan sinkronisasi Firestore real-time & kontrol hak akses per tingkat jabatan.'
+              : 'Integrated operational platform with real-time cloud synchronization and role-based permissions.'}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             {currentUser ? (
@@ -356,14 +416,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   className="px-6 py-3 bg-white hover:bg-slate-100 text-blue-700 font-extrabold rounded-2xl text-xs shadow-md transition-all hover:scale-105 cursor-pointer flex items-center gap-2"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span>Buka Executive Dashboard</span>
+                  <span>{t.actions.openSystem}</span>
                 </button>
                 <button
                   onClick={() => onOpenApp('hris')}
                   className="px-6 py-3 bg-blue-700/60 hover:bg-blue-700 text-white font-extrabold rounded-2xl text-xs border border-white/20 transition-all hover:scale-105 cursor-pointer flex items-center gap-2"
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span>Kelola HRIS & Presensi</span>
+                  <span>{t.nav.hris}</span>
                 </button>
               </>
             ) : (
@@ -373,7 +433,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   className="px-8 py-3.5 bg-white hover:bg-slate-100 text-blue-700 font-extrabold rounded-2xl text-xs shadow-md transition-all hover:scale-105 cursor-pointer flex items-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span>Masuk ke Sistem / Gunakan Kode Undangan</span>
+                  <span>{t.actions.login}</span>
                 </button>
               )
             )}

@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { UserProfile, CompanyProfile, DEFAULT_COMPANY_PROFILE } from '../types/crm';
+import { useLanguage } from '../context/LanguageContext';
 import { UserInvitationManagement } from './UserInvitationManagement';
 import {
   Settings,
@@ -83,6 +84,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   theme = 'light',
   onToggleTheme
 }) => {
+  const { language, setLanguage, t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -621,8 +623,71 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </form>
 
-      {/* Secondary Cards: Theme, Firestore Stats, & Backup Management */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Secondary Cards: Language, Theme, Firestore Stats, & Backup Management */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        {/* Language & Lokalisasi Card */}
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              <Globe className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900">{t.settings.languageCardTitle}</h3>
+              <p className="text-[11px] text-slate-400">ID / EN Dual Language</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-xs text-slate-600">
+              {t.settings.languageCardDesc}
+            </p>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setLanguage('id')}
+                className={`w-full p-3 rounded-2xl border flex items-center justify-between text-left transition-all cursor-pointer ${
+                  language === 'id'
+                    ? 'bg-blue-50/80 border-blue-500 text-blue-800 font-bold shadow-2xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">🇮🇩</span>
+                  <div>
+                    <div className="text-xs font-bold">Bahasa Indonesia</div>
+                    <div className="text-[10px] text-slate-400">Bahasa Resmi Utama</div>
+                  </div>
+                </div>
+                {language === 'id' && (
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLanguage('en')}
+                className={`w-full p-3 rounded-2xl border flex items-center justify-between text-left transition-all cursor-pointer ${
+                  language === 'en'
+                    ? 'bg-blue-50/80 border-blue-500 text-blue-800 font-bold shadow-2xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">🇬🇧</span>
+                  <div>
+                    <div className="text-xs font-bold">English</div>
+                    <div className="text-[10px] text-slate-400">International Format</div>
+                  </div>
+                </div>
+                {language === 'en' && (
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Theme & Tampilan Card */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -630,33 +695,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <Palette className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900">Tema & Tampilan Aplikasi</h3>
-              <p className="text-[11px] text-slate-400">Mode Terang / Mode Gelap</p>
+              <h3 className="font-extrabold text-sm text-slate-900">{t.settings.themeTitle}</h3>
+              <p className="text-[11px] text-slate-400">Light / Dark Visual Theme</p>
             </div>
           </div>
 
           <div className="space-y-3">
             <p className="text-xs text-slate-600">
-              Pilih mode tampilan visual yang paling nyaman untuk Anda. Preferensi tersimpan otomatis di perangkat.
+              {language === 'id'
+                ? 'Pilih mode tampilan visual yang paling nyaman untuk Anda.'
+                : 'Select the color theme that best suits your workplace environment.'}
             </p>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => {
                   if (theme !== 'light' && onToggleTheme) onToggleTheme();
                 }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-2 text-center transition-all cursor-pointer ${
+                className={`p-2.5 rounded-2xl border flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${
                   theme === 'light'
                     ? 'bg-blue-50/80 border-blue-500 text-blue-700 font-bold shadow-2xs'
                     : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                <Sun className={`w-5 h-5 ${theme === 'light' ? 'text-blue-600' : 'text-slate-500'}`} />
-                <div className="text-xs">
-                  <div className="font-bold">Light Mode</div>
-                  <div className="text-[10px] text-slate-400">Mode Terang</div>
-                </div>
+                <Sun className={`w-4 h-4 ${theme === 'light' ? 'text-blue-600' : 'text-slate-500'}`} />
+                <div className="text-xs font-bold">{t.actions.themeLight}</div>
               </button>
 
               <button
@@ -664,17 +728,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => {
                   if (theme !== 'dark' && onToggleTheme) onToggleTheme();
                 }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-2 text-center transition-all cursor-pointer ${
+                className={`p-2.5 rounded-2xl border flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${
                   theme === 'dark'
                     ? 'bg-indigo-900/40 border-indigo-500 text-indigo-300 font-bold shadow-2xs'
                     : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-amber-400' : 'text-slate-500'}`} />
-                <div className="text-xs">
-                  <div className="font-bold">Dark Mode</div>
-                  <div className="text-[10px] text-slate-400">Mode Gelap</div>
-                </div>
+                <Moon className={`w-4 h-4 ${theme === 'dark' ? 'text-amber-400' : 'text-slate-500'}`} />
+                <div className="text-xs font-bold">{t.actions.themeDark}</div>
               </button>
             </div>
           </div>
@@ -687,12 +748,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <Database className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900">Statistik Firestore</h3>
-              <p className="text-[11px] text-slate-400">Jumlah data tersimpan di Cloud</p>
+              <h3 className="font-extrabold text-sm text-slate-900">Firestore Cloud Stats</h3>
+              <p className="text-[11px] text-slate-400">Real-time Multi-tenant</p>
             </div>
           </div>
 
-          <div className="space-y-2 text-xs">
+          <div className="space-y-1.5 text-xs">
             {[
               ['👤 Contacts', stats.contactsCount],
               ['🎯 Leads', stats.leadsCount],
@@ -703,7 +764,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             ].map(([label, val], i) => (
               <div
                 key={i}
-                className="flex items-center justify-between py-1.5 border-b border-slate-100 text-slate-600 font-medium"
+                className="flex items-center justify-between py-1 border-b border-slate-100 text-slate-600 font-medium"
               >
                 <span>{label}</span>
                 <strong className="text-slate-900">{val.toLocaleString()}</strong>
@@ -719,22 +780,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <Download className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900">Manajemen Data JSON</h3>
-              <p className="text-[11px] text-slate-400">Backup, restore & reset data</p>
+              <h3 className="font-extrabold text-sm text-slate-900">{t.settings.dataManagementTitle}</h3>
+              <p className="text-[11px] text-slate-400">{t.settings.dataManagementDesc}</p>
             </div>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <button
               type="button"
               onClick={onExportData}
-              className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
+              className="w-full py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
             >
               <span className="flex items-center gap-2">
-                <Download className="w-4 h-4 text-blue-600" />
-                <span>Export Data JSON</span>
+                <Download className="w-3.5 h-3.5 text-blue-600" />
+                <span>{t.actions.export}</span>
               </span>
-              <span className="text-[10px] text-slate-400">Backup</span>
+              <span className="text-[10px] text-slate-400">JSON</span>
             </button>
 
             <input
@@ -748,11 +809,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
+              className="w-full py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
             >
               <span className="flex items-center gap-2">
-                <Upload className="w-4 h-4 text-indigo-600" />
-                <span>Import Backup JSON</span>
+                <Upload className="w-3.5 h-3.5 text-indigo-600" />
+                <span>{t.actions.import}</span>
               </span>
               <span className="text-[10px] text-slate-400">Restore</span>
             </button>
@@ -760,26 +821,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={onLoadDemoData}
-              className="w-full py-2.5 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-xl text-xs font-bold text-blue-800 flex items-center justify-between transition-colors cursor-pointer"
+              className="w-full py-2 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-xl text-xs font-bold text-blue-800 flex items-center justify-between transition-colors cursor-pointer"
             >
               <span className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blue-600" />
-                <span>Isi Data Sampel CRM</span>
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                <span>{t.actions.loadDemo}</span>
               </span>
-              <span className="text-[10px] text-blue-600">Populate</span>
+              <span className="text-[10px] text-blue-600">Sample</span>
             </button>
 
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-1.5 border-t border-slate-100">
               <button
                 type="button"
                 onClick={onClearAllData}
-                className="w-full py-2.5 px-3 bg-red-50 hover:bg-red-100 border border-red-200/80 rounded-xl text-xs font-bold text-red-700 flex items-center justify-between transition-colors cursor-pointer"
+                className="w-full py-2 px-3 bg-red-50 hover:bg-red-100 border border-red-200/80 rounded-xl text-xs font-bold text-red-700 flex items-center justify-between transition-colors cursor-pointer"
               >
                 <span className="flex items-center gap-2">
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                  <span>Hapus Seluruh Data</span>
+                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                  <span>{t.actions.clearData}</span>
                 </span>
-                <span className="text-[10px] text-red-500 font-extrabold">Clear All</span>
+                <span className="text-[10px] text-red-500 font-extrabold">Reset</span>
               </button>
             </div>
           </div>

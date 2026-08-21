@@ -1,5 +1,6 @@
 import React from 'react';
 import { Deal, Lead, Contact, Task, PipelineStage } from '../types/crm';
+import { useLanguage } from '../context/LanguageContext';
 import {
   BarChart,
   Bar,
@@ -40,13 +41,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   pipelineStages,
   currency
 }) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+  const { language, t, formatCurrency: formatMoney } = useLanguage();
 
   // 1. Deals Stage Data for Bar Chart
   const dealStagesList = pipelineStages
@@ -66,7 +61,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   // 2. Lead Sources Pie Chart Data
   const sourceCounts: Record<string, number> = {};
   leads.forEach((l) => {
-    const src = l.source || 'Other';
+    const src = l.source || (language === 'id' ? 'Lainnya' : 'Other');
     sourceCounts[src] = (sourceCounts[src] || 0) + 1;
   });
 
@@ -86,7 +81,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   const closedDealsCount = deals.filter((d) => d.stage === 'Closed Won' || d.stage === 'Closed Lost').length;
   const winRate = closedDealsCount > 0 ? Math.round((wonDeals.length / closedDealsCount) * 100) : 0;
 
-  const completedTasksCount = tasks.filter((t) => t.status === 'Done').length;
+  const completedTasksCount = tasks.filter((tItem) => tItem.status === 'Done' || tItem.status === 'Completed').length;
   const taskCompletionRate = tasks.length > 0 ? Math.round((completedTasksCount / tasks.length) * 100) : 0;
 
   return (
@@ -95,10 +90,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-1">
         <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-purple-600" />
-          <span>CRM Analytics & Executive Reports</span>
+          <span>{t.analytics.title}</span>
         </h2>
         <p className="text-xs text-slate-500">
-          Laporan statistik performa sales pipeline, distribusi lead source, dan rasio konversi deal.
+          {t.analytics.subtitle}
         </p>
       </div>
 
@@ -106,47 +101,49 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">Total Won Revenue</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider">{t.analytics.totalRevenue}</span>
             <DollarSign className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 tracking-tight">
-            {formatCurrency(totalWonRevenue)}
+            {formatMoney(totalWonRevenue, currency)}
           </div>
           <p className="text-[10px] font-semibold text-emerald-600">
-            {wonDeals.length} deal berhasil closed won
+            {wonDeals.length} {language === 'id' ? 'deal berhasil closed won' : 'deals closed won'}
           </p>
         </div>
 
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">Pipeline Win Rate</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider">{t.analytics.winRate}</span>
             <Award className="w-4 h-4 text-purple-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 tracking-tight">{winRate}%</div>
           <p className="text-[10px] font-semibold text-purple-600">
-            {wonDeals.length} won dari {closedDealsCount} closed
+            {wonDeals.length} {language === 'id' ? `won dari ${closedDealsCount} closed` : `won from ${closedDealsCount} closed`}
           </p>
         </div>
 
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">Avg Deal Value</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider">{t.analytics.avgDealValue}</span>
             <TrendingUp className="w-4 h-4 text-blue-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 tracking-tight">
-            {formatCurrency(avgDealSize)}
+            {formatMoney(avgDealSize, currency)}
           </div>
-          <p className="text-[10px] font-semibold text-blue-600">Rata-rata nilai per deal</p>
+          <p className="text-[10px] font-semibold text-blue-600">
+            {language === 'id' ? 'Rata-rata nilai per deal' : 'Average value per deal'}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">Task Completion</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider">{t.analytics.taskCompletion}</span>
             <CheckCircle2 className="w-4 h-4 text-teal-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 tracking-tight">{taskCompletionRate}%</div>
           <p className="text-[10px] font-semibold text-teal-600">
-            {completedTasksCount} dari {tasks.length} task selesai
+            {completedTasksCount} {language === 'id' ? `dari ${tasks.length} task selesai` : `of ${tasks.length} tasks completed`}
           </p>
         </div>
       </div>
@@ -158,7 +155,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-blue-600" />
-              <span>Nilai Sales Pipeline Per Stage</span>
+              <span>{t.analytics.stageDistribution}</span>
             </h3>
             <span className="text-[10px] font-bold text-slate-400">Stage Value ({currency})</span>
           </div>
@@ -170,7 +167,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip
-                  formatter={(val: number) => [formatCurrency(val), 'Total Value']}
+                  formatter={(val: number) => [formatMoney(val, currency), 'Total Value']}
                   contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
                 />
                 <Bar dataKey="value" fill="#3B82F6" radius={[6, 6, 0, 0]} />
@@ -184,14 +181,18 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
               <PieIcon className="w-4 h-4 text-indigo-600" />
-              <span>Distribusi Lead Source</span>
+              <span>{t.analytics.leadSources}</span>
             </h3>
-            <span className="text-[10px] font-bold text-slate-400">{leads.length} Leads Total</span>
+            <span className="text-[10px] font-bold text-slate-400">
+              {leads.length} {language === 'id' ? 'Total Leads' : 'Total Leads'}
+            </span>
           </div>
 
           <div className="h-64 w-full flex items-center justify-center">
             {sourcePieData.length === 0 ? (
-              <div className="text-center text-slate-400 text-xs">Belum ada data lead source</div>
+              <div className="text-center text-slate-400 text-xs">
+                {language === 'id' ? 'Belum ada data lead source' : 'No lead source data available'}
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
