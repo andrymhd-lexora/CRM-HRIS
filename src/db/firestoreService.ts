@@ -1058,6 +1058,11 @@ export async function updateAttendance(id: string, data: Partial<Attendance>) {
   }
 }
 
+export async function deleteAttendance(id: string) {
+  await deleteDoc(doc(db, 'attendances', id));
+  await logActivity('hris', `Menghapus data presensi ID #${id}`, 'attendance', id);
+}
+
 // HRIS Leave Requests
 export async function createLeaveRequest(data: Omit<LeaveRequest, 'id' | 'createdAt'>) {
   const now = new Date().toISOString();
@@ -1075,6 +1080,11 @@ export async function updateLeaveStatus(id: string, status: 'Approved' | 'Reject
     approvedBy: approvedBy || 'HR Admin'
   }));
   await logActivity('hris', `Pengajuan cuti ID #${id} diubah statusnya menjadi ${status}`, 'leave', id);
+}
+
+export async function deleteLeaveRequest(id: string) {
+  await deleteDoc(doc(db, 'leaveRequests', id));
+  await logActivity('hris', `Menghapus pengajuan cuti ID #${id}`, 'leave', id);
 }
 
 // HRIS Payroll
@@ -1106,6 +1116,11 @@ export async function markPayrollPaid(id: string) {
     paymentDate: now.split('T')[0]
   });
   await logActivity('hris', `Payroll ID #${id} ditandai TERBAYAR`, 'payroll', id);
+}
+
+export async function deletePayroll(id: string) {
+  await deleteDoc(doc(db, 'payrolls', id));
+  await logActivity('hris', `Menghapus slip payroll ID #${id}`, 'payroll', id);
 }
 
 
