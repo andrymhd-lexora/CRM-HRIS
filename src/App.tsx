@@ -50,10 +50,13 @@ import {
   addEmployee,
   updateEmployee,
   deleteEmployee,
+  deleteAttendance,
   createLeaveRequest,
   updateLeaveStatus,
+  deleteLeaveRequest,
   generateOrUpdatePayroll,
   markPayrollPaid,
+  deletePayroll,
   logActivity as logFirestoreActivity,
   seedFirestoreSampleData,
   clearAllFirestoreCollections
@@ -98,11 +101,47 @@ import { Customer360Modal } from './components/Customer360Modal';
 import { QuickAddModal } from './components/QuickAddModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { AuthModal } from './components/AuthModal';
+import { ConfirmModal } from './components/ConfirmModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>('landing');
   const [activeHrisTab, setActiveHrisTab] = useState<HRISTab>('overview');
+
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant?: 'danger' | 'warning' | 'info';
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => Promise<void> | void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    variant: 'danger',
+    onConfirm: () => {}
+  });
+
+  const askConfirmation = (config: {
+    title: string;
+    message: string;
+    variant?: 'danger' | 'warning' | 'info';
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => Promise<void> | void;
+  }) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: config.title,
+      message: config.message,
+      variant: config.variant || 'danger',
+      confirmText: config.confirmText,
+      cancelText: config.cancelText,
+      onConfirm: config.onConfirm
+    });
+  };
 
   const handleNavigate = (view: ActiveView, hrisTab?: HRISTab) => {
     const isAdminOrAbove = currentUser?.role === 'Super Admin' || currentUser?.role === 'Owner' || currentUser?.role === 'Admin';
@@ -351,10 +390,17 @@ export default function App() {
   };
 
   const handleDeleteEmployee = async (id: any) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus data karyawan ini dari sistem HRIS Firestore?')) return;
-    await deleteEmployee(String(id));
-    await logFirestoreActivity('contact', `Menghapus karyawan HRIS ID #${id}`, 'contact', String(id));
-    addToast('Karyawan berhasil dihapus', 'info');
+    const target = employees.find(e => String(e.id) === String(id));
+    const name = target?.name || `ID #${id}`;
+    askConfirmation({
+      title: 'Hapus Data Karyawan',
+      message: `Apakah Anda yakin ingin menghapus data karyawan "${name}" dari sistem HRIS Firestore? Tindakan ini permanen.`,
+      onConfirm: async () => {
+        await deleteEmployee(String(id));
+        await logFirestoreActivity('contact', `Menghapus karyawan HRIS ID #${id}`, 'contact', String(id));
+        addToast(`Karyawan "${name}" berhasil dihapus`, 'info');
+      }
+    });
   };
 
   const handleAddAttendance = async (data: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -367,6 +413,17 @@ export default function App() {
     addToast('Presensi & Check-Out berhasil diperbarui di Firestore', 'success');
   };
 
+  const handleDeleteAttendance = async (id: any) => {
+    askConfirmation({
+      title: 'Hapus Catatan Presensi',
+      message: 'Apakah Anda yakin ingin menghapus catatan presensi ini dari Cloud Firestore?',
+      onConfirm: async () => {
+        await deleteAttendance(String(id));
+        addToast('Catatan presensi berhasil dihapus', 'info');
+      }
+    });
+  };
+
   const handleCreateLeaveRequest = async (data: Omit<LeaveRequest, 'id' | 'createdAt'>) => {
     await createLeaveRequest(data);
     addToast(`Pengajuan cuti / izin berhasil dikirim ke Cloud Firestore`, 'success');
@@ -377,6 +434,17 @@ export default function App() {
     addToast(`Pengajuan cuti statusnya diubah menjadi "${status}"`, status === 'Approved' ? 'success' : 'info');
   };
 
+  const handleDeleteLeaveRequest = async (id: any) => {
+    askConfirmation({
+      title: 'Hapus Pengajuan Cuti',
+      message: 'Apakah Anda yakin ingin menghapus pengajuan cuti ini dari Cloud Firestore?',
+      onConfirm: async () => {
+        await deleteLeaveRequest(String(id));
+        addToast('Pengajuan cuti berhasil dihapus', 'info');
+      }
+    });
+  };
+
   const handleGeneratePayroll = async (data: Omit<Payroll, 'id' | 'createdAt'>) => {
     await generateOrUpdatePayroll(data);
     addToast(`Gaji periode ${data.periodName} berhasil diproses di Firestore`, 'success');
@@ -385,6 +453,17 @@ export default function App() {
   const handleMarkPayrollPaid = async (id: any) => {
     await markPayrollPaid(String(id));
     addToast('Status slip gaji berhasil diperbarui menjadi TERBAYAR (Paid)', 'success');
+  };
+
+  const handleDeletePayroll = async (id: any) => {
+    askConfirmation({
+      title: 'Hapus Slip Gaji Payroll',
+      message: 'Apakah Anda yakin ingin menghapus slip gaji periode ini dari Cloud Firestore?',
+      onConfirm: async () => {
+        await deletePayroll(String(id));
+        addToast('Slip gaji berhasil dihapus', 'info');
+      }
+    });
   };
 
   // --- Handlers for Companies ---
@@ -437,15 +516,22 @@ export default function App() {
   };
 
   const handleDeleteCompany = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus data perusahaan ini?')) return;
-    setCompanies((prev) => prev.filter((c) => String(c.id) !== String(id)));
-    try {
-      await deleteCompany(id);
-      addToast('Perusahaan berhasil dihapus', 'info');
-    } catch (err: any) {
-      addToast(`Gagal menghapus perusahaan: ${err.message}`, 'error');
-      throw err;
-    }
+    const target = companies.find((c) => String(c.id) === String(id));
+    const name = target?.name || `ID #${id}`;
+    askConfirmation({
+      title: 'Hapus Data Perusahaan',
+      message: `Apakah Anda yakin ingin menghapus data perusahaan "${name}" beserta seluruh asosiasi datanya?`,
+      onConfirm: async () => {
+        setCompanies((prev) => prev.filter((c) => String(c.id) !== String(id)));
+        try {
+          await deleteCompany(id);
+          addToast(`Perusahaan "${name}" berhasil dihapus`, 'info');
+        } catch (err: any) {
+          addToast(`Gagal menghapus perusahaan: ${err.message}`, 'error');
+          throw err;
+        }
+      }
+    });
   };
 
   // --- Handlers for Quotations ---
@@ -461,9 +547,16 @@ export default function App() {
   };
 
   const handleDeleteQuotation = async (id: string) => {
-    if (!confirm('Hapus Penawaran ini?')) return;
-    await deleteQuotation(id);
-    addToast('Penawaran berhasil dihapus', 'info');
+    const target = quotations.find((q) => String(q.id) === String(id));
+    const num = target?.quotationNumber || `ID #${id}`;
+    askConfirmation({
+      title: 'Hapus Surat Penawaran',
+      message: `Apakah Anda yakin ingin menghapus surat penawaran #${num}?`,
+      onConfirm: async () => {
+        await deleteQuotation(id);
+        addToast(`Penawaran #${num} berhasil dihapus`, 'info');
+      }
+    });
   };
 
   // --- Lead Conversion & Deal Automation Handlers ---
@@ -535,10 +628,17 @@ export default function App() {
   };
 
   const handleDeleteContact = async (id: any) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus kontak ini dari Cloud Firestore?')) return;
-    await deleteContact(String(id));
-    await logFirestoreActivity('contact', `Hapus kontak ID #${id}`, 'contact', String(id));
-    addToast('Kontak berhasil dihapus', 'info');
+    const target = contacts.find((c) => String(c.id) === String(id));
+    const name = target?.name || `ID #${id}`;
+    askConfirmation({
+      title: 'Hapus Data Kontak',
+      message: `Apakah Anda yakin ingin menghapus kontak "${name}" dari Cloud Firestore?`,
+      onConfirm: async () => {
+        await deleteContact(String(id));
+        await logFirestoreActivity('contact', `Hapus kontak ID #${id}`, 'contact', String(id));
+        addToast(`Kontak "${name}" berhasil dihapus`, 'info');
+      }
+    });
   };
 
   // --- Handlers for Leads ---
@@ -564,10 +664,17 @@ export default function App() {
   };
 
   const handleDeleteLead = async (id: any) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus lead ini dari Cloud Firestore?')) return;
-    await deleteLead(String(id));
-    await logFirestoreActivity('lead', `Hapus lead ID #${id}`, 'lead', String(id));
-    addToast('Lead berhasil dihapus', 'info');
+    const target = leads.find((l) => String(l.id) === String(id));
+    const name = target?.name || `ID #${id}`;
+    askConfirmation({
+      title: 'Hapus Data Lead',
+      message: `Apakah Anda yakin ingin menghapus calon prospek / lead "${name}"?`,
+      onConfirm: async () => {
+        await deleteLead(String(id));
+        await logFirestoreActivity('lead', `Hapus lead ID #${id}`, 'lead', String(id));
+        addToast(`Lead "${name}" berhasil dihapus`, 'info');
+      }
+    });
   };
 
   // --- Handlers for Deals ---
@@ -593,10 +700,17 @@ export default function App() {
   };
 
   const handleDeleteDeal = async (id: any) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus deal ini dari Cloud Firestore?')) return;
-    await deleteDeal(String(id));
-    await logFirestoreActivity('deal', `Hapus deal ID #${id}`, 'deal', String(id));
-    addToast('Deal berhasil dihapus', 'info');
+    const target = deals.find((d) => String(d.id) === String(id));
+    const title = target?.title || `ID #${id}`;
+    askConfirmation({
+      title: 'Hapus Deal Bisnis',
+      message: `Apakah Anda yakin ingin menghapus deal "${title}" dari pipeline penjualan?`,
+      onConfirm: async () => {
+        await deleteDeal(String(id));
+        await logFirestoreActivity('deal', `Hapus deal ID #${id}`, 'deal', String(id));
+        addToast(`Deal "${title}" berhasil dihapus`, 'info');
+      }
+    });
   };
 
   // --- Handlers for Tasks ---
@@ -617,9 +731,17 @@ export default function App() {
   };
 
   const handleDeleteTask = async (id: any) => {
-    await deleteTask(String(id));
-    await logFirestoreActivity('task', `Hapus task ID #${id}`, 'task', String(id));
-    addToast('Task berhasil dihapus', 'info');
+    const target = tasks.find((t) => String(t.id) === String(id));
+    const title = target?.title || `ID #${id}`;
+    askConfirmation({
+      title: 'Hapus Tugas / Task',
+      message: `Apakah Anda yakin ingin menghapus tugas "${title}"?`,
+      onConfirm: async () => {
+        await deleteTask(String(id));
+        await logFirestoreActivity('task', `Hapus task ID #${id}`, 'task', String(id));
+        addToast(`Tugas "${title}" berhasil dihapus`, 'info');
+      }
+    });
   };
 
   const handleToggleTaskStatus = async (id: any) => {
@@ -644,9 +766,15 @@ export default function App() {
   };
 
   const handleDeleteStage = async (id: any) => {
-    if (!confirm('Hapus stage ini? Data lead/deal terkait akan tetap ada.')) return;
-    await deletePipelineStage(String(id));
-    addToast('Stage berhasil dihapus', 'info');
+    askConfirmation({
+      title: 'Hapus Stage Pipeline',
+      message: 'Apakah Anda yakin ingin menghapus stage ini? Data lead/deal terkait akan tetap tersimpan di database.',
+      variant: 'warning',
+      onConfirm: async () => {
+        await deletePipelineStage(String(id));
+        addToast('Stage berhasil dihapus', 'info');
+      }
+    });
   };
 
   // --- Handlers for Settings & Data ---
@@ -726,12 +854,17 @@ export default function App() {
   };
 
   const handleClearAllData = async () => {
-    if (!confirm('⚠️ Hapus SELURUH data CRM & HRIS dari Cloud Firestore?')) return;
-    if (!confirm('KONFIRMASI TERAKHIR: Data kontak, deal, task, karyawan, absensi, dan payroll di Cloud Firestore akan dihapus.')) return;
-
-    await clearAllFirestoreCollections();
-    addToast('Seluruh data CRM & HRIS di Cloud Firestore berhasil dibersihkan', 'info');
-    setActiveView('dashboard');
+    askConfirmation({
+      title: 'Hapus Seluruh Data CRM & HRIS',
+      message: 'PERINGATAN KRUSIAL: Tindakan ini akan menghapus seluruh data Kontak, Deals, Leads, Tasks, Karyawan, Presensi, dan Payroll dari Cloud Firestore. Apakah Anda benar-benar yakin?',
+      variant: 'danger',
+      confirmText: 'Ya, Bersihkan Seluruh Data',
+      onConfirm: async () => {
+        await clearAllFirestoreCollections();
+        addToast('Seluruh data CRM & HRIS di Cloud Firestore berhasil dibersihkan', 'info');
+        setActiveView('dashboard');
+      }
+    });
   };
 
   // Role checks for filtering CRM and settings
@@ -968,8 +1101,10 @@ export default function App() {
               onDeleteEmployee={handleDeleteEmployee}
               onAddAttendance={handleAddAttendance}
               onUpdateAttendance={handleUpdateAttendance}
+              onDeleteAttendance={handleDeleteAttendance}
               onAddLeaveRequest={handleCreateLeaveRequest}
               onUpdateLeaveStatus={handleUpdateLeaveStatus}
+              onDeleteLeaveRequest={handleDeleteLeaveRequest}
               onGenerateMonthlyPayroll={async (month, year) => {
                 try {
                   const activeEmps = employees.filter((emp) => emp.status === 'Active');
@@ -989,6 +1124,7 @@ export default function App() {
                 }
               }}
               onUpdatePayrollStatus={handleMarkPayrollPaid}
+              onDeletePayroll={handleDeletePayroll}
             />
           )}
 
@@ -1185,6 +1321,18 @@ export default function App() {
           setIsAuthModalOpen(false);
           addToast(`Selamat datang kembali, ${profile.displayName || profile.email}! Role: ${profile.role}`, 'success');
         }}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        variant={confirmModalConfig.variant}
+        confirmText={confirmModalConfig.confirmText}
+        cancelText={confirmModalConfig.cancelText}
+        onConfirm={confirmModalConfig.onConfirm}
+        onCancel={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
       />
 
       <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
