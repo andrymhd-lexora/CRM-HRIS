@@ -57,9 +57,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-extrabold text-slate-900 tracking-tight text-base">{t.appName}</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold tracking-wider uppercase border border-blue-100">
-                {t.enterpriseBadge}
-              </span>
             </div>
             <p className="text-[10px] font-semibold text-slate-400">{t.appSubtitle}</p>
           </div>
