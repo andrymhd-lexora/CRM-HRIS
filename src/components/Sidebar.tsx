@@ -74,7 +74,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isStaff = currentUser?.role === 'Staff';
 
   const crmNavItems = [
-    { id: 'dashboard' as ActiveView, label: t.nav.dashboard, icon: LayoutDashboard },
     { id: 'companies' as ActiveView, label: t.nav.companies, icon: Building2, badge: counts.companies },
     { id: 'contacts' as ActiveView, label: t.nav.contacts, icon: Users, badge: counts.contacts },
     { id: 'leads' as ActiveView, label: t.nav.leads, icon: Target, badge: counts.leads },
@@ -92,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { tab: 'attendance' as HRISTab, label: t.hrisTabs.attendance, icon: CalendarDays },
     { tab: 'leave' as HRISTab, label: t.hrisTabs.leave, icon: FileText, badge: counts.pendingLeaves !== undefined && counts.pendingLeaves > 0 ? `${counts.pendingLeaves}` : undefined },
     { tab: 'payroll' as HRISTab, label: t.hrisTabs.payroll, icon: CreditCard },
-    ...(!isStaff ? [{ tab: 'reports' as HRISTab, label: t.hrisTabs.reports, icon: BarChart3 }] : [])
+    ...(isAdminOrAbove ? [{ tab: 'reports' as HRISTab, label: t.hrisTabs.reports, icon: BarChart3 }] : [])
   ];
 
   const handleNavClick = (view: ActiveView, hrisTab?: HRISTab) => {
@@ -160,18 +159,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Navigation List */}
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 text-xs font-medium custom-scrollbar">
-          {/* Quick Portal Switch */}
-          <button
-            onClick={() => handleNavClick('landing')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeView === 'landing'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>{t.nav.landing}</span>
-          </button>
+          {/* Top Primary Navigation: Portal Overview & Dashboard Utama */}
+          <div className="space-y-1">
+            {/* Quick Portal Switch (Portal Overview) */}
+            <button
+              onClick={() => handleNavClick('landing')}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeView === 'landing'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>{t.nav.landing}</span>
+              </div>
+              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-600 dark:text-amber-300">
+                PORTAL
+              </span>
+            </button>
+
+            {/* Dashboard Utama */}
+            <button
+              onClick={() => handleNavClick('dashboard')}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeView === 'dashboard'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                  : 'text-slate-700 hover:bg-blue-50/60 hover:text-blue-700'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <LayoutDashboard className={`w-4 h-4 shrink-0 ${activeView === 'dashboard' ? 'text-white' : 'text-blue-600'}`} />
+                <span>{language === 'id' ? 'Dashboard Utama' : 'Main Dashboard'}</span>
+              </div>
+              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-extrabold ${
+                activeView === 'dashboard' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'
+              }`}>
+                HUB
+              </span>
+            </button>
+          </div>
 
           {/* CRM & SALES SECTION */}
           <div className="space-y-1">

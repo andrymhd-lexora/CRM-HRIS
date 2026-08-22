@@ -174,9 +174,19 @@ export const HRISView: React.FC<HRISViewProps> = ({
 
   React.useEffect(() => {
     if (initialTab) {
-      setActiveTab(initialTab);
+      if (initialTab === 'reports' && !isAdminOrAbove) {
+        setActiveTab('overview');
+      } else {
+        setActiveTab(initialTab);
+      }
     }
-  }, [initialTab]);
+  }, [initialTab, isAdminOrAbove]);
+
+  React.useEffect(() => {
+    if (activeTab === 'reports' && !isAdminOrAbove) {
+      setActiveTab('overview');
+    }
+  }, [activeTab, isAdminOrAbove]);
 
   // Search & Filter States
   const [empSearch, setEmpSearch] = useState('');
@@ -865,14 +875,14 @@ export const HRISView: React.FC<HRISViewProps> = ({
         </div>
 
         {/* HRIS Navigation Tabs */}
-        <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
           {[
             { id: 'overview' as HRISTab, label: 'Overview & Absensi', icon: Clock },
             { id: 'employees' as HRISTab, label: 'Database Karyawan', icon: Users, badge: isAdminOrAbove ? employees.length : (userEmp ? 1 : 0) },
             { id: 'attendance' as HRISTab, label: 'Log Kehadiran', icon: CalendarDays },
             { id: 'leave' as HRISTab, label: 'Pengajuan Cuti', icon: FileText, badge: pendingLeaves.length > 0 ? pendingLeaves.length : undefined },
             { id: 'payroll' as HRISTab, label: 'Gaji & Slip Gaji', icon: CreditCard },
-            ...(!isStaff ? [{ id: 'reports' as HRISTab, label: 'Laporan HR', icon: BarChart3 }] : [])
+            ...(isAdminOrAbove ? [{ id: 'reports' as HRISTab, label: 'Laporan HR', icon: BarChart3 }] : [])
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -880,17 +890,17 @@ export const HRISView: React.FC<HRISViewProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
+                className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer shrink-0 ${
                   isActive
-                    ? 'bg-white text-slate-900 shadow-md'
+                    ? 'bg-white text-slate-900 shadow-md font-black'
                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
-                {!isStaff && tab.badge !== undefined && (
+                {isAdminOrAbove && tab.badge !== undefined && (
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${
                       isActive ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'
                     }`}
                   >
@@ -1324,7 +1334,87 @@ export const HRISView: React.FC<HRISViewProps> = ({
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Mobile Card List for small screens */}
+              <div className="block sm:hidden space-y-3">
+                {filteredTodayAttendances.length === 0 ? (
+                  <div className="py-8 text-center text-slate-400 text-xs">
+                    Belum ada data absensi untuk filter ini hari ini.
+                  </div>
+                ) : (
+                  filteredTodayAttendances.map((att) => {
+                    const displayPhoto = att.checkInPhoto || att.photoUrl || att.photoSimulated;
+                    return (
+                      <div key={att.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            {displayPhoto ? (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedAttDetail(att)}
+                                className="relative rounded-xl overflow-hidden border border-slate-300 w-10 h-10 shrink-0 cursor-pointer"
+                              >
+                                <img src={displayPhoto} alt="Selfie" className="w-full h-full object-cover" />
+                              </button>
+                            ) : (
+                              <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-xs shrink-0">
+                                {att.employeeName.charAt(0)}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-bold text-xs text-slate-900 leading-tight">{att.employeeName}</p>
+                              <p className="text-[10px] font-mono text-slate-500">{att.employeeCode}</p>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                              att.status === 'Hadir'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : att.status === 'Terlambat'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                            }`}
+                          >
+                            {att.status}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px] bg-white p-2 rounded-lg border border-slate-100">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Check In:</span>
+                            <span className="font-bold text-emerald-600">{att.checkIn || '-'}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Check Out:</span>
+                            <span className="font-bold text-slate-700">{att.checkOut || '-'}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 text-[11px]">
+                          <div className="text-slate-600 truncate pr-2">
+                            <span className="font-medium">{att.workLocation}</span>
+                            {att.latitude && att.longitude && (
+                              <span className="text-[10px] text-emerald-700 font-mono block">
+                                {att.latitude.toFixed(3)}, {att.longitude.toFixed(3)}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAttDetail(att)}
+                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 inline-flex items-center gap-1"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Detail</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Desktop / Tablet Table view */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider">
@@ -1690,26 +1780,28 @@ export const HRISView: React.FC<HRISViewProps> = ({
                 </select>
               </div>
 
-              <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-                <button
-                  type="button"
-                  onClick={() => handleExportAttendanceCSV('filtered')}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                  title="Ekspor data tanggal ini yang terfilter ke format CSV"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Ekspor CSV (Tanggal Ini)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleExportAttendanceCSV('monthly')}
-                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                  title="Ekspor seluruh arsip kehadiran bulan ini ke format CSV"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Ekspor CSV (Bulanan)</span>
-                </button>
-              </div>
+              {isAdminOrAbove && (
+                <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+                  <button
+                    type="button"
+                    onClick={() => handleExportAttendanceCSV('filtered')}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                    title="Ekspor data tanggal ini yang terfilter ke format CSV"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Ekspor CSV (Tanggal Ini)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleExportAttendanceCSV('monthly')}
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                    title="Ekspor seluruh arsip kehadiran bulan ini ke format CSV"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Ekspor CSV (Bulanan)</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1724,71 +1816,57 @@ export const HRISView: React.FC<HRISViewProps> = ({
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleExportAttendanceCSV('filtered')}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                  title="Unduh CSV data kehadiran saat ini"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Unduh File CSV</span>
-                </button>
-              </div>
+              {isAdminOrAbove && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleExportAttendanceCSV('filtered')}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                    title="Unduh CSV data kehadiran saat ini"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Unduh File CSV</span>
+                  </button>
+                </div>
+              )}
             </div>
 
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
-                <tr>
-                  <th className="p-3">NIK & Karyawan</th>
-                  <th className="p-3">Foto Selfie</th>
-                  <th className="p-3">Jam Masuk</th>
-                  <th className="p-3">Jam Keluar</th>
-                  <th className="p-3">Total Jam</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Geotag & Lokasi</th>
-                  <th className="p-3 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredLogAttendances.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400">
-                      Belum ada data laporan absensi untuk tanggal {attDate}.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLogAttendances.map((att) => {
+            {/* Mobile / Tablet Attendance Log Card List */}
+            <div className="block md:hidden divide-y divide-slate-100">
+              {filteredLogAttendances.length === 0 ? (
+                <div className="py-8 text-center text-slate-400 text-xs">
+                  Belum ada data laporan absensi untuk tanggal {attDate}.
+                </div>
+              ) : (
+                filteredLogAttendances.map((att) => {
                   const displayPhoto = att.checkInPhoto || att.photoUrl || att.photoSimulated;
                   return (
-                    <tr key={att.id} className="hover:bg-slate-50">
-                      <td className="p-3">
-                        <div className="font-bold text-slate-900">{att.employeeName}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{att.employeeCode}</div>
-                      </td>
-                      <td className="p-3">
-                        {displayPhoto ? (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedAttDetail(att)}
-                            className="relative group rounded-xl overflow-hidden border border-slate-200 block w-8 h-8 cursor-pointer"
-                            title="Klik untuk lihat foto selfie"
-                          >
-                            <img src={displayPhoto} alt="Selfie" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                              <Eye className="w-3 h-3" />
+                    <div key={att.id} className="p-4 space-y-3 hover:bg-slate-50/60 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {displayPhoto ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAttDetail(att)}
+                              className="relative rounded-xl overflow-hidden border border-slate-200 w-11 h-11 shrink-0 cursor-pointer"
+                              title="Klik untuk lihat foto selfie"
+                            >
+                              <img src={displayPhoto} alt="Selfie" className="w-full h-full object-cover" />
+                            </button>
+                          ) : (
+                            <div className="w-11 h-11 rounded-xl bg-slate-100 text-slate-500 font-bold flex items-center justify-center text-xs shrink-0 border border-slate-200">
+                              {att.employeeName.charAt(0)}
                             </div>
-                          </button>
-                        ) : (
-                          <span className="text-[10px] text-slate-400 italic">Tanpa Foto</span>
-                        )}
-                      </td>
-                      <td className="p-3 font-semibold text-emerald-600">{att.checkIn}</td>
-                      <td className="p-3 font-semibold text-slate-600">{att.checkOut || '-'}</td>
-                      <td className="p-3 text-slate-700 font-medium">{att.hoursWorked} jam</td>
-                      <td className="p-3">
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-bold text-xs text-slate-900 truncate">{att.employeeName}</p>
+                            <p className="text-[10px] font-mono text-slate-400">{att.employeeCode}</p>
+                            <p className="text-[10px] text-slate-500">{att.workLocation}</p>
+                          </div>
+                        </div>
+
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
                             att.status === 'Hadir'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : att.status === 'Terlambat'
@@ -1798,43 +1876,157 @@ export const HRISView: React.FC<HRISViewProps> = ({
                         >
                           {att.status}
                         </span>
-                      </td>
-                      <td className="p-3 text-slate-600">
-                        <div>{att.workLocation}</div>
-                        {att.latitude && att.longitude && (
-                          <span className="text-[10px] font-mono text-emerald-700 font-bold flex items-center gap-1">
-                            <MapPin className="w-2.5 h-2.5 text-emerald-600" />
-                            {att.latitude.toFixed(4)}, {att.longitude.toFixed(4)}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-[11px] border border-slate-100">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Jam Masuk:</span>
+                          <span className="font-bold text-emerald-600">{att.checkIn || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Jam Keluar:</span>
+                          <span className="font-bold text-slate-700">{att.checkOut || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Total Jam:</span>
+                          <span className="font-bold text-indigo-700">{att.hoursWorked || 0} Jam</span>
+                        </div>
+                      </div>
+
+                      {att.latitude && att.longitude && (
+                        <div className="text-[10px] text-emerald-700 font-mono flex items-center gap-1 px-1">
+                          <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span>GPS: {att.latitude.toFixed(4)}, {att.longitude.toFixed(4)}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAttDetail(att)}
+                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Lihat Detail & Selfie</span>
+                        </button>
+                        {isAdminOrAbove && att.id && onDeleteAttendance && (
                           <button
                             type="button"
-                            onClick={() => setSelectedAttDetail(att)}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 font-bold text-[11px] rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1"
+                            onClick={() => onDeleteAttendance(att.id)}
+                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Hapus Presensi"
                           >
-                            <Eye className="w-3 h-3" />
-                            <span>Detail</span>
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                          {isAdminOrAbove && att.id && onDeleteAttendance && (
-                            <button
-                              type="button"
-                              onClick={() => onDeleteAttendance(att.id)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                              title="Hapus Presensi"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Full Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="p-3">NIK & Karyawan</th>
+                    <th className="p-3">Foto Selfie</th>
+                    <th className="p-3">Jam Masuk</th>
+                    <th className="p-3">Jam Keluar</th>
+                    <th className="p-3">Total Jam</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Geotag & Lokasi</th>
+                    <th className="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredLogAttendances.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-slate-400">
+                        Belum ada data laporan absensi untuk tanggal {attDate}.
                       </td>
                     </tr>
-                  );
-                }))}
-              </tbody>
-            </table>
+                  ) : (
+                    filteredLogAttendances.map((att) => {
+                    const displayPhoto = att.checkInPhoto || att.photoUrl || att.photoSimulated;
+                    return (
+                      <tr key={att.id} className="hover:bg-slate-50">
+                        <td className="p-3">
+                          <div className="font-bold text-slate-900">{att.employeeName}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">{att.employeeCode}</div>
+                        </td>
+                        <td className="p-3">
+                          {displayPhoto ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAttDetail(att)}
+                              className="relative group rounded-xl overflow-hidden border border-slate-200 block w-8 h-8 cursor-pointer"
+                              title="Klik untuk lihat foto selfie"
+                            >
+                              <img src={displayPhoto} alt="Selfie" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                <Eye className="w-3 h-3" />
+                              </div>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">Tanpa Foto</span>
+                          )}
+                        </td>
+                        <td className="p-3 font-semibold text-emerald-600">{att.checkIn}</td>
+                        <td className="p-3 font-semibold text-slate-600">{att.checkOut || '-'}</td>
+                        <td className="p-3 text-slate-700 font-medium">{att.hoursWorked} jam</td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                              att.status === 'Hadir'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : att.status === 'Terlambat'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                            }`}
+                          >
+                            {att.status}
+                          </span>
+                        </td>
+                        <td className="p-3 text-slate-600">
+                          <div>{att.workLocation}</div>
+                          {att.latitude && att.longitude && (
+                            <span className="text-[10px] font-mono text-emerald-700 font-bold flex items-center gap-1">
+                              <MapPin className="w-2.5 h-2.5 text-emerald-600" />
+                              {att.latitude.toFixed(4)}, {att.longitude.toFixed(4)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAttDetail(att)}
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 font-bold text-[11px] rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>Detail</span>
+                            </button>
+                            {isAdminOrAbove && att.id && onDeleteAttendance && (
+                              <button
+                                type="button"
+                                onClick={() => onDeleteAttendance(att.id)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                title="Hapus Presensi"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1975,15 +2167,17 @@ export const HRISView: React.FC<HRISViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setIsExcelExportModalOpen(true)}
-                className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                title="Ekspor Laporan Penggajian & PPh 21 ke format Microsoft Excel (*.xlsx)"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                <span>Ekspor Excel (.xlsx)</span>
-              </button>
+              {isAdminOrAbove && (
+                <button
+                  type="button"
+                  onClick={() => setIsExcelExportModalOpen(true)}
+                  className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Ekspor Laporan Penggajian & PPh 21 ke format Microsoft Excel (*.xlsx)"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span>Ekspor Excel (.xlsx)</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -2133,162 +2327,311 @@ export const HRISView: React.FC<HRISViewProps> = ({
                   </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsExcelExportModalOpen(true)}
-                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Unduh Excel Periode Ini</span>
-                </button>
+                {isAdminOrAbove && (
+                  <button
+                    type="button"
+                    onClick={() => setIsExcelExportModalOpen(true)}
+                    className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Unduh Excel Periode Ini</span>
+                  </button>
+                )}
               </div>
             </div>
 
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
-                <tr>
-                  <th className="p-3">Kode & Karyawan</th>
-                  <th className="p-3">Departemen</th>
-                  <th className="p-3">Gaji Pokok</th>
-                  <th className="p-3">Tunjangan</th>
-                  <th className="p-3">Lembur & Bonus</th>
-                  <th className="p-3">BPJS & Absensi</th>
-                  <th className="p-3">PPh 21 TER (PMK 168)</th>
-                  <th className="p-3">Gaji Bersih (THP)</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {visiblePayrolls.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="p-10 text-center">
-                      <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
-                        <CreditCard className="w-8 h-8 text-slate-300 stroke-[1.5]" />
-                        <p className="text-sm font-semibold text-slate-600">
-                          {payrollStatusFilter === 'All'
-                            ? `Belum ada slip gaji yang digenerate untuk Bulan ${payrollMonth}/${payrollYear}`
-                            : `Tidak ditemukan slip gaji dengan status "${payrollStatusFilter === 'Paid' ? 'Lunas (Paid)' : 'Pending'}" pada periode ini.`}
-                        </p>
-                        {payrollStatusFilter !== 'All' ? (
-                          <button
-                            type="button"
-                            onClick={() => setPayrollStatusFilter('All')}
-                            className="mt-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-colors cursor-pointer border border-blue-200"
-                          >
-                            Tampilkan Semua ({currentPayrolls.length} slip gaji)
-                          </button>
-                        ) : isAdminOrAbove ? (
-                          <button
-                            type="button"
-                            onClick={() => onGenerateMonthlyPayroll(payrollMonth, payrollYear)}
-                            className="mt-1 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-xs inline-flex items-center gap-1.5"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Hitung & Autogenerate Slip Gaji Sekarang</span>
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  visiblePayrolls.map((p) => {
-                    const isEmployerBorne = p.pph21PaidBy === 'Perusahaan' || (p.pph21EmployeeDeduction === 0 && (p.pph21Amount || 0) > 0);
-                    const pph21Val = p.pph21Amount || 0;
+            {/* Mobile & Tablet Responsive Payroll Card List */}
+            <div className="block lg:hidden divide-y divide-slate-100">
+              {visiblePayrolls.length === 0 ? (
+                <div className="p-8 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
+                    <CreditCard className="w-8 h-8 text-slate-300 stroke-[1.5]" />
+                    <p className="text-sm font-semibold text-slate-600">
+                      {payrollStatusFilter === 'All'
+                        ? `Belum ada slip gaji yang digenerate untuk Bulan ${payrollMonth}/${payrollYear}`
+                        : `Tidak ditemukan slip gaji dengan status "${payrollStatusFilter === 'Paid' ? 'Lunas (Paid)' : 'Pending'}" pada periode ini.`}
+                    </p>
+                    {payrollStatusFilter !== 'All' ? (
+                      <button
+                        type="button"
+                        onClick={() => setPayrollStatusFilter('All')}
+                        className="mt-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-colors cursor-pointer border border-blue-200"
+                      >
+                        Tampilkan Semua ({currentPayrolls.length} slip gaji)
+                      </button>
+                    ) : isAdminOrAbove ? (
+                      <button
+                        type="button"
+                        onClick={() => onGenerateMonthlyPayroll(payrollMonth, payrollYear)}
+                        className="mt-1 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Hitung & Autogenerate Slip Gaji Sekarang</span>
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : (
+                visiblePayrolls.map((p) => {
+                  const isEmployerBorne = p.pph21PaidBy === 'Perusahaan' || (p.pph21EmployeeDeduction === 0 && (p.pph21Amount || 0) > 0);
+                  const pph21Val = p.pph21Amount || 0;
 
-                    return (
-                      <tr key={p.id} className="hover:bg-slate-50">
-                        <td className="p-3 font-bold text-slate-900">
-                          <div>{p.employeeName}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{p.payrollCode}</div>
-                        </td>
-                        <td className="p-3 text-slate-600 font-medium">{p.department}</td>
-                        <td className="p-3 font-semibold text-slate-800">{formatMoney(p.baseSalary)}</td>
-                        <td className="p-3 font-semibold text-emerald-600">+{formatMoney(p.allowances)}</td>
-                        <td className="p-3 font-semibold text-indigo-600">+{formatMoney(p.overtimePay + p.bonus)}</td>
-                        <td className="p-3 font-semibold text-amber-700">-{formatMoney((p.bpjsAmount || 0) + (p.deductions || 0))}</td>
-                        <td className="p-3">
-                          {isEmployerBorne ? (
-                            <div>
-                              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[9px] inline-block">
-                                Ditanggung Perusahaan
-                              </span>
-                              <div className="text-[11px] font-bold text-emerald-700 mt-0.5">
-                                Rp {formatMoney(pph21Val)} ({p.terCategory || 'TER A'} {p.terRatePercent ?? 0}%)
-                              </div>
-                              <div className="text-[9px] text-slate-400 font-medium">Potongan THP: Rp 0</div>
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="font-bold text-rose-600">-{formatMoney(pph21Val)}</div>
-                              <div className="text-[10px] text-indigo-700 font-bold">
-                                {p.terCategory || 'TER A'} ({p.terRatePercent ?? 0}%)
-                              </div>
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-3 font-black text-slate-900 text-sm">{formatMoney(p.netSalary)}</td>
-                        <td className="p-3">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                              p.paymentStatus === 'Paid'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : p.paymentStatus === 'Approved'
-                                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                : 'bg-amber-50 text-amber-700 border-amber-200'
-                            }`}
-                          >
-                            {p.paymentStatus}
+                  return (
+                    <div key={p.id} className="p-4 space-y-3 hover:bg-slate-50/60 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-extrabold text-sm text-slate-900">{p.employeeName}</p>
+                          <p className="text-[11px] font-mono text-slate-400">{p.payrollCode}</p>
+                          <span className="inline-block mt-0.5 px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md">
+                            {p.department}
                           </span>
-                        </td>
-                        <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
-                          <button
-                            onClick={() => setSelectedPayslip(p)}
-                            className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                            title="Lihat Slip Gaji Lengkap"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Slip Gaji</span>
-                          </button>
-                          <button
-                            onClick={() => handleDownloadPayslipPDF(p)}
-                            className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/80 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                            title="Export dan Download PDF Resmi"
-                          >
-                            <Download className="w-3.5 h-3.5 text-indigo-600" />
-                            <span>Unduh PDF</span>
-                          </button>
-                          {isAdminOrAbove && p.paymentStatus !== 'Paid' && p.id && (
-                            <button
-                              onClick={() => onUpdatePayrollStatus(p.id!, 'Paid')}
-                              className="px-2.5 py-1 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                              <span>Tandai Lunas</span>
-                            </button>
+                        </div>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
+                            p.paymentStatus === 'Paid'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : p.paymentStatus === 'Approved'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}
+                        >
+                          {p.paymentStatus}
+                        </span>
+                      </div>
+
+                      {/* Gaji Breakdown Matrix */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px]">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Gaji Pokok:</span>
+                          <span className="font-bold text-slate-800">Rp {formatMoney(p.baseSalary)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Tunjangan:</span>
+                          <span className="font-bold text-emerald-600">+Rp {formatMoney(p.allowances)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Lembur & Bonus:</span>
+                          <span className="font-bold text-indigo-600">+Rp {formatMoney(p.overtimePay + p.bonus)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">BPJS & Potongan:</span>
+                          <span className="font-bold text-amber-700">-Rp {formatMoney((p.bpjsAmount || 0) + (p.deductions || 0))}</span>
+                        </div>
+                      </div>
+
+                      {/* PPh 21 Info Block */}
+                      <div className="p-2.5 bg-indigo-50/50 rounded-xl border border-indigo-100 flex items-center justify-between text-xs">
+                        <div>
+                          <span className="text-[10px] text-indigo-900 font-bold block">PPh 21 TER ({p.terCategory || 'TER A'} {p.terRatePercent ?? 0}%)</span>
+                          {isEmployerBorne ? (
+                            <span className="text-[10px] font-extrabold text-emerald-700">
+                              Disubsidi Perusahaan Rp {formatMoney(pph21Val)} (THP: Rp 0)
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-extrabold text-rose-600">
+                              Dipotong dari Slip Gaji Rp {formatMoney(pph21Val)}
+                            </span>
                           )}
-                          {isAdminOrAbove && p.id && onDeletePayroll && (
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 block uppercase font-bold">Gaji Bersih (THP)</span>
+                          <span className="text-sm sm:text-base font-black text-slate-900">Rp {formatMoney(p.netSalary)}</span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center justify-end gap-2 pt-1 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPayslip(p)}
+                          className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Slip Gaji</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadPayslipPDF(p)}
+                          className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <Download className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Unduh PDF</span>
+                        </button>
+                        {isAdminOrAbove && p.paymentStatus !== 'Paid' && p.id && (
+                          <button
+                            type="button"
+                            onClick={() => onUpdatePayrollStatus(p.id!, 'Paid')}
+                            className="px-3 py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Tandai Lunas</span>
+                          </button>
+                        )}
+                        {isAdminOrAbove && p.id && onDeletePayroll && (
+                          <button
+                            type="button"
+                            onClick={() => onDeletePayroll(p.id!)}
+                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer inline-flex items-center"
+                            title="Hapus Slip Payroll"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="p-3">Kode & Karyawan</th>
+                    <th className="p-3">Departemen</th>
+                    <th className="p-3">Gaji Pokok</th>
+                    <th className="p-3">Tunjangan</th>
+                    <th className="p-3">Lembur & Bonus</th>
+                    <th className="p-3">BPJS & Absensi</th>
+                    <th className="p-3">PPh 21 TER (PMK 168)</th>
+                    <th className="p-3">Gaji Bersih (THP)</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {visiblePayrolls.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="p-10 text-center">
+                        <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
+                          <CreditCard className="w-8 h-8 text-slate-300 stroke-[1.5]" />
+                          <p className="text-sm font-semibold text-slate-600">
+                            {payrollStatusFilter === 'All'
+                              ? `Belum ada slip gaji yang digenerate untuk Bulan ${payrollMonth}/${payrollYear}`
+                              : `Tidak ditemukan slip gaji dengan status "${payrollStatusFilter === 'Paid' ? 'Lunas (Paid)' : 'Pending'}" pada periode ini.`}
+                          </p>
+                          {payrollStatusFilter !== 'All' ? (
                             <button
-                              onClick={() => onDeletePayroll(p.id!)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer inline-flex items-center"
-                              title="Hapus Slip Payroll"
+                              type="button"
+                              onClick={() => setPayrollStatusFilter('All')}
+                              className="mt-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-colors cursor-pointer border border-blue-200"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              Tampilkan Semua ({currentPayrolls.length} slip gaji)
                             </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                          ) : isAdminOrAbove ? (
+                            <button
+                              type="button"
+                              onClick={() => onGenerateMonthlyPayroll(payrollMonth, payrollYear)}
+                              className="mt-1 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                              <span>Hitung & Autogenerate Slip Gaji Sekarang</span>
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    visiblePayrolls.map((p) => {
+                      const isEmployerBorne = p.pph21PaidBy === 'Perusahaan' || (p.pph21EmployeeDeduction === 0 && (p.pph21Amount || 0) > 0);
+                      const pph21Val = p.pph21Amount || 0;
+
+                      return (
+                        <tr key={p.id} className="hover:bg-slate-50">
+                          <td className="p-3 font-bold text-slate-900">
+                            <div>{p.employeeName}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">{p.payrollCode}</div>
+                          </td>
+                          <td className="p-3 text-slate-600 font-medium">{p.department}</td>
+                          <td className="p-3 font-semibold text-slate-800">{formatMoney(p.baseSalary)}</td>
+                          <td className="p-3 font-semibold text-emerald-600">+{formatMoney(p.allowances)}</td>
+                          <td className="p-3 font-semibold text-indigo-600">+{formatMoney(p.overtimePay + p.bonus)}</td>
+                          <td className="p-3 font-semibold text-amber-700">-{formatMoney((p.bpjsAmount || 0) + (p.deductions || 0))}</td>
+                          <td className="p-3">
+                            {isEmployerBorne ? (
+                              <div>
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[9px] inline-block">
+                                  Ditanggung Perusahaan
+                                </span>
+                                <div className="text-[11px] font-bold text-emerald-700 mt-0.5">
+                                  Rp {formatMoney(pph21Val)} ({p.terCategory || 'TER A'} {p.terRatePercent ?? 0}%)
+                                </div>
+                                <div className="text-[9px] text-slate-400 font-medium">Potongan THP: Rp 0</div>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="font-bold text-rose-600">-{formatMoney(pph21Val)}</div>
+                                <div className="text-[10px] text-indigo-700 font-bold">
+                                  {p.terCategory || 'TER A'} ({p.terRatePercent ?? 0}%)
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3 font-black text-slate-900 text-sm">{formatMoney(p.netSalary)}</td>
+                          <td className="p-3">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                                p.paymentStatus === 'Paid'
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : p.paymentStatus === 'Approved'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}
+                            >
+                              {p.paymentStatus}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                            <button
+                              onClick={() => setSelectedPayslip(p)}
+                              className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                              title="Lihat Slip Gaji Lengkap"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Slip Gaji</span>
+                            </button>
+                            <button
+                              onClick={() => handleDownloadPayslipPDF(p)}
+                              className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/80 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                              title="Export dan Download PDF Resmi"
+                            >
+                              <Download className="w-3.5 h-3.5 text-indigo-600" />
+                              <span>Unduh PDF</span>
+                            </button>
+                            {isAdminOrAbove && p.paymentStatus !== 'Paid' && p.id && (
+                              <button
+                                onClick={() => onUpdatePayrollStatus(p.id!, 'Paid')}
+                                className="px-2.5 py-1 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Tandai Lunas</span>
+                              </button>
+                            )}
+                            {isAdminOrAbove && p.id && onDeletePayroll && (
+                              <button
+                                onClick={() => onDeletePayroll(p.id!)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer inline-flex items-center"
+                                title="Hapus Slip Payroll"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {/* TAB 6: REPORT & ANALYTICS */}
-      {activeTab === 'reports' && !isStaff && (
+      {activeTab === 'reports' && isAdminOrAbove && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Chart 1: Department Payroll Spending */}
