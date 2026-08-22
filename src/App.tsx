@@ -1119,15 +1119,25 @@ export default function App() {
               leads={visibleLeads}
               deals={visibleDeals}
               tasks={visibleTasks}
+              companies={visibleCompanies}
+              quotations={visibleQuotations}
+              customers={visibleCustomers}
+              employees={employees}
+              attendances={attendances}
+              leaveRequests={leaveRequests}
+              payrolls={payrolls}
               activities={activities}
               currency={currencySetting}
               companyProfile={companyProfile}
+              currentUser={currentUser}
               onNavigate={handleNavigate}
               onOpenAddModal={(type) => {
                 if (type === 'contact') handleNavigate('contacts');
                 if (type === 'lead') handleNavigate('leads');
                 if (type === 'deal') handleNavigate('deals');
                 if (type === 'task') handleNavigate('tasks');
+                if (type === 'quotation') handleNavigate('quotations');
+                if (type === 'company') handleNavigate('companies');
               }}
               onToggleTaskStatus={handleToggleTaskStatus}
             />
